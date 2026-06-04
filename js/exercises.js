@@ -285,7 +285,17 @@ Exercises._showForm = function(existing) {
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">分类</label>
-          <input type="text" class="form-input" name="category" value="${Esc.html(ex.category || '')}" placeholder="例如：胸部">
+          <input type="text" class="form-input" name="category" value="${Esc.html(ex.category || '')}" placeholder="例如：胸部" list="category-list">
+          <datalist id="category-list">
+            <option value="胸">
+            <option value="肩">
+            <option value="背">
+            <option value="腿">
+            <option value="手臂">
+            <option value="腹部">
+            <option value="有氧">
+            <option value="全身">
+          </datalist>
         </div>
         <div class="form-group">
           <label class="form-label">默认休息 (秒)</label>

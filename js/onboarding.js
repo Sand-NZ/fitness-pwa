@@ -96,7 +96,11 @@ Onboarding.showStep3 = function() {
       </div>
       <div class="form-group">
         <label class="form-label">分类（可选）</label>
-        <input type="text" class="form-input" name="category" placeholder="例如：胸部">
+        <input type="text" class="form-input" name="category" placeholder="例如：胸部" list="onboarding-category-list">
+        <datalist id="onboarding-category-list">
+          <option value="胸"><option value="肩"><option value="背"><option value="腿">
+          <option value="手臂"><option value="腹部"><option value="有氧"><option value="全身">
+        </datalist>
       </div>
       <div class="form-group">
         <label class="form-label">标签</label>
