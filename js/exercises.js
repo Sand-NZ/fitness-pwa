@@ -190,6 +190,13 @@ Exercises.renderPage = function() {
   Tags.load();
   this.load();
 
+  // 绑定头部按钮（一次性）
+  const headerBtn = document.getElementById('btn-add-exercise');
+  if (headerBtn && !headerBtn._listenerAttached) {
+    headerBtn.addEventListener('click', () => Exercises.showAddForm());
+    headerBtn._listenerAttached = true;
+  }
+
   let html = '';
 
   // 搜索

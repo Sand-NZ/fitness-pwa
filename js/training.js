@@ -36,6 +36,7 @@ Training.init = function() {
 Training._wireToggleButtons = function() {
   const toggleBtns = document.querySelectorAll('.training-mode-toggle .toggle-btn');
   toggleBtns.forEach(btn => {
+    if (btn._listenerAttached) return;
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
       if (this.isActive) {
@@ -47,6 +48,7 @@ Training._wireToggleButtons = function() {
       this.mode = mode;
       App.emit('pageChange', 'training');
     });
+    btn._listenerAttached = true;
   });
 };
 
