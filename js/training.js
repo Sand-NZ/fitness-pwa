@@ -189,6 +189,25 @@ Training.recordSet = function(formData) {
   return true;
 };
 
+// ---------- 换动作（自由模式） ----------
+Training._switchExercise = function() {
+  // 保存当前动作的已记录组到临时列表
+  if (this.currentExercise && this.setData.length > 0) {
+    if (!this._completedExercises) this._completedExercises = [];
+    this._completedExercises.push({
+      name: this.currentExercise.name,
+      tags: this.currentExercise.tags || [],
+      sets: this.setData.map(s => ({ ...s })),
+      restDuration: this.currentExercise.defaultRest || 90
+    });
+  }
+  this.currentExercise = null;
+  this.setData = [];
+  this.currentSet = 0;
+  Timer.stop();
+  this.renderPage();
+};
+
 // ---------- 跳过动作 ----------
 Training.skipExercise = function() {
   if (this.mode === 'plan') {
@@ -213,9 +232,9 @@ Training.nextExercise = function() {
   }
 };
 
-// ---------- 结束训练 ----------
+// ---------- 结束训练（去掉弹窗，直接结束） ----------
 Training.endTraining = function() {
-  this.showEndModal();
+  this._saveAndEnd();
 };
 
 Training.showEndModal = function() {
@@ -248,15 +267,10 @@ Training.showEndModal = function() {
 };
 
 Training._saveAndEnd = function() {
-  const form = document.getElementById('end-training-form');
-  if (!form) return;
-  const fd = new FormData(form);
-  const weight = parseFloat(fd.get('weight'));
-  const rpe = parseInt(fd.get('rpe'));
-  const note = fd.get('note') || '';
-
-  if (!weight || weight <= 0) { App.showToast('请输入体重', 'warning'); return; }
-  if (!rpe || rpe < 1 || rpe > 10) { App.showToast('请选择 RPE', 'warning'); return; }
+  const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
+  const weight = settings.autoDefaultWeight || 0;
+  const rpe = 5;
+  const note = '';
 
   // 构建记录
   const exercisesCompleted = [];
@@ -272,12 +286,10 @@ Training._saveAndEnd = function() {
     });
   }
 
-  // 追加之前完成的动作（计划模式遍历积累）
-  if (this.mode === 'plan' && this._completedExercises) {
+  // 追加之前完成的动作（换动作积累的）
+  if (this._completedExercises) {
     this._completedExercises.forEach(ec => {
-      if (!exercisesCompleted.some(ex => ex.name === ec.name)) {
-        exercisesCompleted.push(ec);
-      }
+      exercisesCompleted.push(ec);
     });
   }
 
@@ -418,7 +430,10 @@ Training._renderActive = function() {
         <div style="font-size:1.2rem;font-weight:700">${Esc.html(ex.name)}</div>
         <div style="font-size:0.8rem;color:var(--text-secondary)">第 ${this.currentSet + 1} 组</div>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="Training.skipExercise()" style="color:var(--danger)">跳过 ➜</button>
+      <div style="display:flex;gap:4px">
+        ${this.mode === 'free' ? `<button class="btn btn-ghost btn-sm" onclick="Training._switchExercise()" style="color:var(--accent)">🔄 换动作</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="Training.skipExercise()" style="color:var(--text-secondary)">⏭ 跳过</button>
+      </div>
     </div>`;
 
   // 计时器
