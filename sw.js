@@ -2,7 +2,7 @@
  * sw.js — Service Worker
  * 预缓存静态资源，离线运行，更新通知
  */
-const CACHE_NAME = 'fitness-pwa-v3';
+const CACHE_NAME = 'fitness-pwa-v4';
 const ASSETS = [
   '/',
   '/index.html?v=0.14',
@@ -22,7 +22,6 @@ const ASSETS = [
   '/js/theme.js?v=0.14',
   '/js/backup.js?v=0.14',
   '/js/ui.js?v=0.14',
-  '/js/defaultData.js?v=0.14',
   '/js/onboarding.js?v=0.14',
   '/js/app.js?v=0.14',
   '/assets/manifest.json',
