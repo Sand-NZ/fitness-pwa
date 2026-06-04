@@ -346,11 +346,20 @@ Training.restorePending = function() {
       localStorage.removeItem('fitness_pending_training');
       return;
     }
+    // 字段数据检查：如果 currentExercise 的 fields 里有数组（旧 Bug），丢弃
+    if (p.currentExercise && Array.isArray(p.currentExercise.fields)) {
+      const hasArrayFields = p.currentExercise.fields.some(f => Array.isArray(f));
+      if (hasArrayFields) {
+        localStorage.removeItem('fitness_pending_training');
+        return;
+      }
+    }
     this.mode = p.mode;
     this.planId = p.planId;
-    this.currentExercise = p.currentExercise;
+    // 深度复制并修复字段
+    this.currentExercise = p.currentExercise ? sanitizeFields(JSON.parse(JSON.stringify(p.currentExercise))) : null;
     this.currentSet = p.currentSet;
-    this.setData = p.setData;
+    this.setData = Array.isArray(p.setData) ? p.setData : [];
     this.startedAt = p.startedAt;
     this.isActive = true;
     this.renderPage();

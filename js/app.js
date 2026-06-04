@@ -137,9 +137,12 @@ const SEED_PLANS = [
 
 function seedDefaultData() {
   // 种子版本标记——不受 SW 缓存影响
-  const SEED_VER = 2;
+  const SEED_VER = 3;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
+
+  // 清理旧的待恢复训练（可能含有 Bug 字段数据）
+  localStorage.removeItem('fitness_pending_training');
 
   // 构造标准动作
   const exMap = {};
@@ -150,17 +153,14 @@ function seedDefaultData() {
     return ex;
   });
 
-  // 种子 v1→v2 升级：替换有字段 Bug 的旧种子动作
+  // 种子升级：替换所有旧种子动作（可能有字段 Bug），保留用户自建
   const seedNames = new Set(SEED_EXERCISES.map(e => e.name));
   const existing = STORAGE.get(STORAGE.keys.exercises) || [];
-  // 保留用户自建的非种子动作
-  const userExercises = existing.filter(e => !seedNames.has(e.name));
-  // 合并：用户自建 + 新种子（已修复字段）
+  // 保留用户自建的非种子动作（同时也修复用户自建的字段——如果是数组则转换）
+  const userExercises = existing.filter(e => !seedNames.has(e.name)).map(sanitizeFields);
+  // 合并：用户自建（已修复） + 新种子
   const merged = [...userExercises, ...newExercises];
-
-  if (merged.length !== existing.length || seeded === 1) {
-    STORAGE.set(STORAGE.keys.exercises, merged);
-  }
+  STORAGE.set(STORAGE.keys.exercises, merged);
 
   // 合并已有计划（按名称去重）
   const newPlans = SEED_PLANS.map(p =>
@@ -180,6 +180,41 @@ function seedDefaultData() {
   localStorage.setItem('fitness_onboarding_complete', 'true');
   console.log('✅ 预置数据已合并 (v' + SEED_VER + ')');
 }
+
+// 修复旧数据：如果字段存成了数组 [key,label,type,opts] 则转成对象 {key,label,type,...}
+function sanitizeFields(ex) {
+  if (!ex || !Array.isArray(ex.fields)) return ex;
+  ex.fields = ex.fields.map(f => {
+    if (Array.isArray(f)) {
+      const opts = f[3] || {};
+      return {
+        key: f[0] || '',
+        label: f[1] || '',
+        type: f[2] || 'number',
+        unit: opts.unit || '',
+        step: opts.step || 0.5,
+        required: opts.required || false,
+        default: opts.default ?? null,
+        options: opts.options || [],
+        dependsOn: opts.dependsOn || null
+      };
+    }
+    // 已经是对象的，确保所有必要字段存在
+    if (typeof f === 'object' && f !== null) {
+      if (!f.step) f.step = 0.5;
+      if (!f.required) f.required = false;
+      if (!f.options) f.options = [];
+      if (!f.unit) f.unit = '';
+      if (f.default === undefined) f.default = null;
+      if (!f.dependsOn) f.dependsOn = null;
+    }
+    return f;
+  });
+  return ex;
+}
+
+// 全局暴露，供其他模块（如 training.js）使用
+window.sanitizeFields = sanitizeFields;
 
 // ---------- 初始化 ----------
 App.init = function() {
