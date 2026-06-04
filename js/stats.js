@@ -106,7 +106,7 @@ Stats.renderPage = function() {
   } else {
     records.slice(0, 50).forEach(r => {
       const exNames = (r.exercisesCompleted || []).map(ec => ec.name).join(', ');
-      html += `<div class="card" style="font-size:0.85rem;cursor:pointer;margin-bottom:6px" onclick="Records._toggleDetail('${r.id}')">
+      html += `<div class="card" style="font-size:0.85rem;margin-bottom:6px" onclick="Stats._toggleDetail('${r.id}')">
         <div style="display:flex;justify-content:space-between">
           <span>${UI.formatDate(r.date)}</span>
           <span style="color:var(--text-secondary)">${Esc.html(r.planName)}</span>
@@ -114,6 +114,9 @@ Stats.renderPage = function() {
         <div style="margin-top:2px;color:var(--text-secondary)">体重 ${r.weight}kg · RPE ${r.rpe} · ${UI.formatDuration(r.totalDuration || 0)}</div>
         <div style="font-size:0.8rem;color:var(--text-secondary)">${Esc.html(exNames)}</div>
         <div id="stats-record-detail-${r.id}" class="hidden" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"></div>
+        <div style="margin-top:6px;text-align:right">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.deleteRecord('${r.id}')" style="color:var(--danger);font-size:0.75rem">🗑️ 删除</button>
+        </div>
       </div>`;
     });
 
@@ -123,36 +126,41 @@ Stats.renderPage = function() {
   }
 
   container.innerHTML = html;
+};
 
-  // 覆盖 _toggleDetail 以使用 stats 页面的 ID
-  document.querySelectorAll('#stats-content .card').forEach(card => {
-    card.addEventListener('click', function(e) {
-      if (e.target.closest('button')) return;
-      const detailEl = this.querySelector('[id^="stats-record-detail-"]');
-      if (!detailEl) return;
-      const id = detailEl.id.replace('stats-record-detail-', '');
-      const r = Records.getById(id);
-      if (!r) return;
+// ---------- 记录详情 ----------
+Stats._toggleDetail = function(id) {
+  const detail = document.getElementById('stats-record-detail-' + id);
+  if (!detail) return;
+  if (!detail.classList.contains('hidden')) {
+    detail.classList.add('hidden');
+    return;
+  }
+  const r = Records.getById(id);
+  if (!r) return;
 
-      if (!detailEl.classList.contains('hidden')) {
-        detailEl.classList.add('hidden');
-        return;
-      }
-
-      let detailHtml = '';
-      (r.exercisesCompleted || []).forEach(ec => {
-        detailHtml += `<div style="margin-bottom:6px"><strong>${Esc.html(ec.name)}</strong></div>`;
-        (ec.sets || []).forEach((s, i) => {
-          const parts = Object.entries(s).map(([k, v]) => `${k}: ${v}`).join(' · ');
-          detailHtml += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${parts}</div>`;
-        });
-      });
-      if (r.note) detailHtml += `<div style="margin-top:4px;font-size:0.8rem;color:var(--text-secondary)">备注: ${Esc.html(r.note)}</div>`;
-
-      detailEl.innerHTML = detailHtml;
-      detailEl.classList.remove('hidden');
+  let html = '';
+  (r.exercisesCompleted || []).forEach(ec => {
+    html += `<div style="margin-bottom:6px"><strong>${Esc.html(ec.name)}</strong></div>`;
+    (ec.sets || []).forEach((s, i) => {
+      const parts = Object.entries(s).map(([k, v]) => `${k}: ${v}`).join(' · ');
+      html += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${parts}</div>`;
     });
   });
+  if (r.note) html += `<div style="margin-top:4px;font-size:0.8rem;color:var(--text-secondary)">备注: ${Esc.html(r.note)}</div>`;
+
+  detail.innerHTML = html;
+  detail.classList.remove('hidden');
+};
+
+// ---------- 删除记录 ----------
+Stats.deleteRecord = function(id) {
+  const r = Records.getById(id);
+  if (!r) return;
+  if (!confirm(`确定删除 ${UI.formatDate(r.date)} 的训练记录吗？`)) return;
+  Records.remove(id);
+  this.renderPage();
+  App.showToast('已删除', 'info');
 };
 
 // ---------- 筛选操作 ----------
