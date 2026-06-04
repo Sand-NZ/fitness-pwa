@@ -85,20 +85,13 @@ App.closeModal = function() {
 
 // ============== 预置种子数据 ==============
 const SEED_EXERCISES = [
-  // 热身 (14)
+  // 热身 (7)
   { name:'猫牛式', category:'热身', defaultRest:30, note:'脊柱灵活性', fields:[['reps','次数','number',{unit:'次',step:1}]] },
   { name:'单杠拉背', category:'热身', defaultRest:30, note:'肩胛激活', fields:[['reps','次数','number',{unit:'次',step:1}]] },
   { name:'蜘蛛趴', category:'热身', defaultRest:30, note:'髋关节灵活性', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'弹力带大臂外展', category:'热身', defaultRest:30, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'弹力带推肩', category:'热身', defaultRest:30, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'腹式呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
+  { name:'弹力带训练', category:'热身', defaultRest:30, note:'大臂外展+推肩', fields:[['reps','次数','number',{unit:'次',step:1}]] },
+  { name:'呼吸训练', category:'热身', defaultRest:15, note:'腹式/剑突/单腿/折刀/后纵隔/侧纵隔', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}],['reps','次数','number',{unit:'次',step:1}]] },
   { name:'伟大者拉伸', category:'热身', defaultRest:15, note:'胸椎+髋屈肌', fields:[['reps','次数','number',{unit:'次/侧',step:1}]] },
-  { name:'剑突呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  { name:'单腿呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  { name:'折刀/四点/正斜推吸', category:'热身', defaultRest:15, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'折刀呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  { name:'后纵隔呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  { name:'侧纵隔呼吸', category:'热身', defaultRest:15, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
   { name:'俯身臂屈伸', category:'热身', defaultRest:30, note:'', fields:[['weight','重量 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1}]] },
   // 推 (8)
   { name:'杠铃卧推', category:'推', defaultRest:120, note:'主项', fields:1 },
@@ -140,25 +133,48 @@ const SEED_PLANS = [
 ];
 
 function seedDefaultData() {
-  const existing = STORAGE.get(STORAGE.keys.exercises);
-  if (existing && existing.length > 0) return;
+  // 种子版本标记——不受 SW 缓存影响，即使旧版 app.js 也能检测缺失
+  const SEED_VER = 1;
+  const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
+  if (seeded >= SEED_VER) return;
 
   // 构造动作
   const exMap = {};
-  const exercises = SEED_EXERCISES.map(e => {
+  const newExercises = SEED_EXERCISES.map(e => {
     const fields = e.fields === 1 ? STD : e.fields.map(f => newField(f[0], f[1], f[2], f[3]));
     const ex = newExercise(e.name, fields, { category:e.category, defaultRest:e.defaultRest, note:e.note, tags:[] });
     exMap[e.name] = ex.id;
     return ex;
   });
 
-  // 构造计划
-  const plans = SEED_PLANS.map(p => newPlan(p.name, p.ex.map(n => ({ exerciseId:exMap[n], overrideFields:[] }))));
+  // 合并已有动作（按名称去重，不覆盖自建）
+  const existing = STORAGE.get(STORAGE.keys.exercises) || [];
+  const existingNames = new Set(existing.map(e => e.name));
+  const merged = [...existing];
+  newExercises.forEach(e => {
+    if (!existingNames.has(e.name)) merged.push(e);
+  });
+  if (merged.length !== existing.length) {
+    STORAGE.set(STORAGE.keys.exercises, merged);
+  }
 
-  STORAGE.set(STORAGE.keys.exercises, exercises);
-  STORAGE.set(STORAGE.keys.plans, plans);
+  // 合并已有计划（按名称去重）
+  const newPlans = SEED_PLANS.map(p =>
+    newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] })))
+  );
+  const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
+  const planNames = new Set(existingPlans.map(p => p.name));
+  const mergedPlans = [...existingPlans];
+  newPlans.forEach(p => {
+    if (!planNames.has(p.name)) mergedPlans.push(p);
+  });
+  if (mergedPlans.length !== existingPlans.length) {
+    STORAGE.set(STORAGE.keys.plans, mergedPlans);
+  }
+
+  localStorage.setItem('fitness_seed_version', String(SEED_VER));
   localStorage.setItem('fitness_onboarding_complete', 'true');
-  console.log('✅ 预置数据已载入：'+exercises.length+' 个动作，'+plans.length+' 个计划');
+  console.log('✅ 预置数据已合并');
 }
 
 // ---------- 初始化 ----------
