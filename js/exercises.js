@@ -268,7 +268,12 @@ Exercises.showEditForm = function(id) {
 
 Exercises._showForm = function(existing) {
   const isEdit = !!existing;
-  const ex = existing || { id: '', name: '', category: '', tags: [], note: '', defaultRest: 90, fields: [] };
+  // 新建动作时默认添加重量和次数两个字段
+  const defaultFields = [
+    { key: 'weight', label: '重量 (kg)', type: 'number', unit: 'kg', step: 0.5, required: true, default: null, options: [], dependsOn: null },
+    { key: 'reps', label: '次数', type: 'number', unit: '次', step: 1, required: true, default: null, options: [], dependsOn: null }
+  ];
+  const ex = existing || { id: '', name: '', category: '', tags: [], note: '', defaultRest: 90, fields: JSON.parse(JSON.stringify(defaultFields)) };
   Tags.load();
 
   let html = `<h2>${isEdit ? '编辑动作' : '新建动作'}</h2>
@@ -328,55 +333,52 @@ Exercises._showForm = function(existing) {
   });
 };
 
-Exercises._renderFieldEditorRow = function(field, index) {
+Exercises._renderFieldEditorRow = function(field) {
   const typeOptions = ['number','text','boolean','select','time','duration'].map(t =>
     `<option value="${t}" ${field.type === t ? 'selected' : ''}>${t}</option>`
   ).join('');
-  return `<div class="field-row" data-index="${index}" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-    <input type="text" class="form-input" style="width:80px;flex:1;min-width:60px" name="field-key-${index}" value="${Esc.html(field.key)}" placeholder="标识">
-    <input type="text" class="form-input" style="width:80px;flex:1;min-width:60px" name="field-label-${index}" value="${Esc.html(field.label)}" placeholder="显示名">
-    <select class="form-select field-type" style="width:90px" name="field-type-${index}">${typeOptions}</select>
-    <input type="text" class="form-input" style="width:50px" name="field-unit-${index}" value="${Esc.html(field.unit || '')}" placeholder="单位">
-    <input type="number" class="form-input" style="width:60px" name="field-step-${index}" value="${field.step || 0.5}" step="0.1" placeholder="步进">
+  return `<div class="field-row" style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+    <input type="text" class="form-input field-key" style="width:80px;flex:1;min-width:60px" value="${Esc.html(field.key)}" placeholder="标识">
+    <input type="text" class="form-input field-label" style="width:80px;flex:1;min-width:60px" value="${Esc.html(field.label)}" placeholder="显示名">
+    <select class="form-select field-type" style="width:90px">${typeOptions}</select>
+    <input type="text" class="form-input field-unit" style="width:50px" value="${Esc.html(field.unit || '')}" placeholder="单位">
+    <input type="number" class="form-input field-step" style="width:60px" value="${field.step || 0.5}" step="0.1" placeholder="步进">
     <label class="form-checkbox" style="white-space:nowrap">
-      <input type="checkbox" name="field-required-${index}" ${field.required ? 'checked' : ''}> 必填
+      <input type="checkbox" class="field-required" ${field.required ? 'checked' : ''}> 必填
     </label>
-    <button type="button" class="btn btn-ghost btn-sm" onclick="Exercises._removeFieldRow(${index})" style="color:var(--danger)">✕</button>
+    <button type="button" class="btn btn-ghost btn-sm" onclick="Exercises._removeFieldRow(this)" style="color:var(--danger)">✕</button>
   </div>`;
 };
 
 Exercises._addFieldRow = function() {
   const list = document.getElementById('field-list');
   if (!list) return;
-  const count = list.children.length;
   const dummy = { key: '', label: '', type: 'number', unit: 'kg', step: 0.5, required: false };
-  list.insertAdjacentHTML('beforeend', this._renderFieldEditorRow(dummy, count));
+  list.insertAdjacentHTML('beforeend', this._renderFieldEditorRow(dummy));
 };
 
-Exercises._removeFieldRow = function(index) {
-  const el = document.querySelector(`.field-row[data-index="${index}"]`);
-  if (el) el.remove();
+Exercises._removeFieldRow = function(btn) {
+  const row = btn.closest('.field-row');
+  if (row) row.remove();
 };
 
 Exercises._saveForm = function(existingId) {
   const form = document.getElementById('exercise-form');
   if (!form) return;
-  const fd = new FormData(form);
 
-  // 收集字段
+  // 收集字段（使用 DOM 相对查询，不再依赖索引）
   const fields = [];
   const fieldRows = form.querySelectorAll('.field-row');
   fieldRows.forEach(row => {
-    const idx = row.dataset.index;
-    const key = row.querySelector(`[name="field-key-${idx}"]`)?.value?.trim();
+    const key = row.querySelector('.field-key')?.value?.trim();
     if (!key) return;
     fields.push({
       key,
-      label: row.querySelector(`[name="field-label-${idx}"]`)?.value?.trim() || key,
-      type: row.querySelector(`[name="field-type-${idx}"]`)?.value || 'number',
-      unit: row.querySelector(`[name="field-unit-${idx}"]`)?.value?.trim() || '',
-      step: parseFloat(row.querySelector(`[name="field-step-${idx}"]`)?.value) || 0.5,
-      required: row.querySelector(`[name="field-required-${idx}"]`)?.checked || false,
+      label: row.querySelector('.field-label')?.value?.trim() || key,
+      type: row.querySelector('.field-type')?.value || 'number',
+      unit: row.querySelector('.field-unit')?.value?.trim() || '',
+      step: parseFloat(row.querySelector('.field-step')?.value) || 0.5,
+      required: row.querySelector('.field-required')?.checked || false,
       default: null,
       options: [],
       dependsOn: null
