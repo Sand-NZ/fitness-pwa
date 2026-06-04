@@ -96,6 +96,12 @@ App.init = function() {
   if (!STORAGE.get(STORAGE.keys.settings)) {
     STORAGE.set(STORAGE.keys.settings, defaultSettings());
   }
+
+  // 首次启动：填充预置数据
+  if (window.DefaultData) {
+    DefaultData.seed();
+  }
+
   ['tags', 'exercises', 'plans', 'records'].forEach(k => {
     if (!STORAGE.get(STORAGE.keys[k])) {
       STORAGE.set(STORAGE.keys[k], []);
