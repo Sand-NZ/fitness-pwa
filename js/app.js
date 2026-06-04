@@ -123,8 +123,11 @@ const SEED_EXERCISES = [
   { name:'卷腹', category:'核心', defaultRest:45, note:'', fields:[['weight','负重 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1,required:true}]] },
   { name:'仰卧抬腿', category:'核心', defaultRest:45, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] }
 ];
-// fields: 1 表示标准 [weight, reps]
-const STD = [['weight','重量 (kg)','number',{unit:'kg',step:.5,required:true}],['reps','次数','number',{unit:'次',step:1,required:true}]];
+// fields: 1 表示标准 [weight, reps]，构造时用 newField 转换
+const STD = () => [
+  newField('weight', '重量 (kg)', 'number', { unit:'kg', step:.5, required:true }),
+  newField('reps', '次数', 'number', { unit:'次', step:1, required:true })
+];
 
 const SEED_PLANS = [
   { name:'推日', ex:['杠铃卧推','哑铃卧推','双杠臂屈伸（助力）','上斜哑铃卧推','反向飞鸟','蝴蝶机夹胸','器械直臂下压','俯身哑铃后束飞鸟'] },
@@ -133,28 +136,29 @@ const SEED_PLANS = [
 ];
 
 function seedDefaultData() {
-  // 种子版本标记——不受 SW 缓存影响，即使旧版 app.js 也能检测缺失
-  const SEED_VER = 1;
+  // 种子版本标记——不受 SW 缓存影响
+  const SEED_VER = 2;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
-  // 构造动作
+  // 构造标准动作
   const exMap = {};
   const newExercises = SEED_EXERCISES.map(e => {
-    const fields = e.fields === 1 ? STD : e.fields.map(f => newField(f[0], f[1], f[2], f[3]));
+    const fields = e.fields === 1 ? STD() : e.fields.map(f => newField(f[0], f[1], f[2], f[3]));
     const ex = newExercise(e.name, fields, { category:e.category, defaultRest:e.defaultRest, note:e.note, tags:[] });
     exMap[e.name] = ex.id;
     return ex;
   });
 
-  // 合并已有动作（按名称去重，不覆盖自建）
+  // 种子 v1→v2 升级：替换有字段 Bug 的旧种子动作
+  const seedNames = new Set(SEED_EXERCISES.map(e => e.name));
   const existing = STORAGE.get(STORAGE.keys.exercises) || [];
-  const existingNames = new Set(existing.map(e => e.name));
-  const merged = [...existing];
-  newExercises.forEach(e => {
-    if (!existingNames.has(e.name)) merged.push(e);
-  });
-  if (merged.length !== existing.length) {
+  // 保留用户自建的非种子动作
+  const userExercises = existing.filter(e => !seedNames.has(e.name));
+  // 合并：用户自建 + 新种子（已修复字段）
+  const merged = [...userExercises, ...newExercises];
+
+  if (merged.length !== existing.length || seeded === 1) {
     STORAGE.set(STORAGE.keys.exercises, merged);
   }
 
@@ -174,7 +178,7 @@ function seedDefaultData() {
 
   localStorage.setItem('fitness_seed_version', String(SEED_VER));
   localStorage.setItem('fitness_onboarding_complete', 'true');
-  console.log('✅ 预置数据已合并');
+  console.log('✅ 预置数据已合并 (v' + SEED_VER + ')');
 }
 
 // ---------- 初始化 ----------

@@ -530,10 +530,12 @@ Training._submitSet = function() {
   Training.recordSet(data);
 };
 
+// ---------- 取消训练 ----------
 Training._cancelTraining = function() {
   this.isActive = false;
   this.currentExercise = null;
   this.setData = [];
+  this._completedExercises = [];
   Timer.stop();
   this.renderPage();
 };
