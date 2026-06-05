@@ -315,10 +315,14 @@ Training._saveAndEnd = function() {
     });
   }
 
-  const totalDuration = this.startedAt ? Math.floor((Date.now() - new Date(this.startedAt)) / 1000) : 0;
+  const totalDuration = this.startedAt ? (() => {
+    const d = new Date(this.startedAt);
+    return isNaN(d.getTime()) ? 0 : Math.floor((Date.now() - d) / 1000);
+  })() : 0;
 
   const record = newRecord({
     planName: this.mode === 'plan' ? (Plans.getById(this.planId)?.name || '计划训练') : '自由训练',
+    mode: this.mode, // BUG 11: 存储模式以便统计筛选
     totalDuration,
     weight,
     rpe,
@@ -335,6 +339,7 @@ Training._saveAndEnd = function() {
   this.currentSet = 0;
   Timer.stop();
 
+  localStorage.removeItem('fitness_pending_training'); // BUG 1+5
   App.closeModal();
   this.renderPage();
   App.showToast('✅ 训练记录已保存', 'success');
@@ -350,6 +355,7 @@ Training.autoSave = function() {
     currentExercise: this.currentExercise,
     currentSet: this.currentSet,
     setData: this.setData,
+    _completedExercises: this._completedExercises, // BUG 6: 保存积累的已完成动作
     startedAt: this.startedAt,
     timestamp: Date.now()
   };
@@ -570,6 +576,7 @@ Training._submitSet = function() {
 
 // ---------- 取消训练 ----------
 Training._cancelTraining = function() {
+  localStorage.removeItem('fitness_pending_training'); // BUG 5
   this.isActive = false;
   this.currentExercise = null;
   this.setData = [];

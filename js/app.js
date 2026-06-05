@@ -215,7 +215,7 @@ function sanitizeFields(ex) {
     }
     // 已经是对象的，确保所有必要字段存在
     if (typeof f === 'object' && f !== null) {
-      if (!f.step) f.step = 0.5;
+      if (f.step == null) f.step = 0.5; // BUG 12: 用 == null 避免把 0 覆盖
       if (!f.required) f.required = false;
       if (!f.options) f.options = [];
       if (!f.unit) f.unit = '';

@@ -133,41 +133,44 @@ Exercises.getCategories = function() {
   return Array.from(cats).sort();
 };
 
-// ---------- 渲染辅助（返回 HTML） ----------
+// ---------- 渲染辅助（返回 HTML）——所有字段值均转义防 XSS ----------
 Exercises.renderFieldInput = function(field, value) {
-  const val = value ?? field.default ?? '';
+  const val = Esc.html(value ?? field.default ?? '');
   const requiredAttr = field.required ? 'required' : '';
-  const stepAttr = field.step ? `step="${field.step}"` : '';
-  const placeholder = field.unit ? `例如: ${field.unit}` : '';
+  const stepVal = field.step ? Esc.html(String(field.step)) : '';
+  const stepAttr = stepVal ? `step="${stepVal}"` : '';
+  const label = Esc.html(field.label || '');
+  const key = Esc.html(field.key || '');
+  const placeholder = field.unit ? '例如: ' + Esc.html(field.unit) : '';
 
   switch (field.type) {
     case 'number':
       return `<div class="form-group">
-        <label class="form-label">${field.label}</label>
-        <input type="number" class="form-input" name="${field.key}" value="${val}" ${stepAttr} placeholder="${placeholder}" ${requiredAttr}>
+        <label class="form-label">${label}</label>
+        <input type="number" class="form-input" name="${key}" value="${val}" ${stepAttr} placeholder="${placeholder}" ${requiredAttr}>
       </div>`;
 
     case 'text':
       return `<div class="form-group">
-        <label class="form-label">${field.label}</label>
-        <input type="text" class="form-input" name="${field.key}" value="${val}" placeholder="${placeholder || '请输入'}" ${requiredAttr}>
+        <label class="form-label">${label}</label>
+        <input type="text" class="form-input" name="${key}" value="${val}" placeholder="${placeholder || '请输入'}" ${requiredAttr}>
       </div>`;
 
     case 'boolean':
       return `<div class="form-group">
         <label class="form-checkbox">
-          <input type="checkbox" name="${field.key}" ${val ? 'checked' : ''}>
-          <span>${field.label}</span>
+          <input type="checkbox" name="${key}" ${val ? 'checked' : ''}>
+          <span>${label}</span>
         </label>
       </div>`;
 
     case 'select':
       const options = (field.options || []).map(o =>
-        `<option value="${o}" ${String(val) === String(o) ? 'selected' : ''}>${o}</option>`
+        `<option value="${Esc.html(o)}" ${String(val) === String(o) ? 'selected' : ''}>${Esc.html(o)}</option>`
       ).join('');
       return `<div class="form-group">
-        <label class="form-label">${field.label}</label>
-        <select class="form-select" name="${field.key}" ${requiredAttr}>
+        <label class="form-label">${label}</label>
+        <select class="form-select" name="${key}" ${requiredAttr}>
           <option value="">请选择</option>
           ${options}
         </select>
@@ -176,14 +179,14 @@ Exercises.renderFieldInput = function(field, value) {
     case 'duration':
     case 'time':
       return `<div class="form-group">
-        <label class="form-label">${field.label}</label>
-        <input type="number" class="form-input" name="${field.key}" value="${val}" ${stepAttr} placeholder="${field.unit || '秒'}" ${requiredAttr}>
+        <label class="form-label">${label}</label>
+        <input type="number" class="form-input" name="${key}" value="${val}" ${stepAttr} placeholder="${Esc.html(field.unit || '秒')}" ${requiredAttr}>
       </div>`;
 
     default:
       return `<div class="form-group">
-        <label class="form-label">${field.label}</label>
-        <input type="text" class="form-input" name="${field.key}" value="${val}" placeholder="${placeholder}" ${requiredAttr}>
+        <label class="form-label">${label}</label>
+        <input type="text" class="form-input" name="${key}" value="${val}" placeholder="${placeholder}" ${requiredAttr}>
       </div>`;
   }
 };

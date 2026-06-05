@@ -144,7 +144,7 @@ Stats._toggleDetail = function(id) {
   (r.exercisesCompleted || []).forEach(ec => {
     html += `<div style="margin-bottom:6px"><strong>${Esc.html(ec.name)}</strong></div>`;
     (ec.sets || []).forEach((s, i) => {
-      const parts = Object.entries(s).map(([k, v]) => `${k}: ${v}`).join(' · ');
+      const parts = Object.entries(s).map(([k, v]) => `${Esc.html(k)}: ${Esc.html(v)}`).join(' · ');
       html += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${parts}</div>`;
     });
   });
@@ -200,10 +200,14 @@ Stats._saveEdit = function(id) {
 Stats.deleteRecord = function(id) {
   const r = Records.getById(id);
   if (!r) return;
-  if (!confirm(`确定删除 ${UI.formatDate(r.date)} 的训练记录吗？`)) return;
-  Records.remove(id);
-  this.renderPage();
-  App.showToast('已删除', 'info');
+  App.showModal(UI.confirmModal('删除记录', `确定删除 ${UI.formatDate(r.date)} 的训练记录吗？`, '删除', '取消', true));
+  const btn = document.getElementById('modal-confirm-btn');
+  if (btn) btn.addEventListener('click', () => {
+    Records.remove(id);
+    App.closeModal();
+    this.renderPage();
+    App.showToast('已删除', 'info');
+  }, { once: true });
 };
 
 // ---------- 筛选操作 ----------

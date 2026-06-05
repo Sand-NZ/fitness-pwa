@@ -8,8 +8,7 @@ const Timer = {
   paused: false,
   intervalId: null,
   onTick: null,
-  _startTime: 0,
-  _pausedElapsed: 0
+  _startTime: 0
 };
 
 Timer.init = function(opts = {}) {
@@ -20,7 +19,6 @@ Timer.init = function(opts = {}) {
     const el = document.getElementById('timer-display');
     if (el) el.textContent = fmt;
   };
-  this._pausedElapsed = 0;
 };
 
 Timer.start = function() {
@@ -36,7 +34,6 @@ Timer.pause = function() {
   if (!this.running || this.paused) return;
   this.paused = true;
   clearInterval(this.intervalId);
-  this._pausedElapsed = this.elapsed;
 };
 
 Timer.resume = function() {

@@ -58,15 +58,23 @@ Records.query = function(opts = {}) {
 
   if (opts.startDate) {
     const start = new Date(opts.startDate).getTime();
-    results = results.filter(r => new Date(r.date).getTime() >= start);
+    if (isNaN(start)) return results; // BUG 9: 无效日期不筛选
+    results = results.filter(r => {
+      const t = new Date(r.date).getTime();
+      return !isNaN(t) && t >= start;
+    });
   }
   if (opts.endDate) {
     const end = new Date(opts.endDate).getTime() + 86400000;
-    results = results.filter(r => new Date(r.date).getTime() < end);
+    if (isNaN(end)) return results;
+    results = results.filter(r => {
+      const t = new Date(r.date).getTime();
+      return !isNaN(t) && t < end;
+    });
   }
   if (opts.mode && opts.mode !== 'all') {
-    if (opts.mode === 'free') results = results.filter(r => r.planName === '自由训练');
-    else results = results.filter(r => r.planName !== '自由训练');
+    if (opts.mode === 'free') results = results.filter(r => r.mode === 'free' || r.planName === '自由训练');
+    else results = results.filter(r => r.mode === 'plan' || r.planName !== '自由训练');
   }
   if (opts.tagIds && opts.tagIds.length) {
     results = results.filter(r =>
@@ -222,7 +230,7 @@ Records._toggleDetail = function(id) {
   (r.exercisesCompleted || []).forEach(ec => {
     html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
     (ec.sets || []).forEach((s, i) => {
-      const parts = Object.entries(s).map(([k, v]) => `${k}: ${v}`).join(' · ');
+      const parts = Object.entries(s).map(([k, v]) => `${Esc.html(k)}: ${Esc.html(v)}`).join(' · ');
       html += `<div style="padding:2px 0">组 ${i+1}: ${parts}</div>`;
     });
   });

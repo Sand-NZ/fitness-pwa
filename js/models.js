@@ -109,6 +109,7 @@ function newRecord(opts = {}) {
   return {
     id: generateId(),
     planName: opts.planName || '自由训练',
+    mode: opts.mode || (opts.planName === '自由训练' ? 'free' : 'plan'), // BUG 11
     date: opts.date || new Date().toISOString(),
     totalDuration: opts.totalDuration || 0,
     weight: opts.weight ?? 0,

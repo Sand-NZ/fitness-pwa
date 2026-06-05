@@ -78,6 +78,10 @@ Backup._applyImport = function(data, mode) {
 
   const mergeOrSet = (key, items) => {
     const existing = STORAGE.get(STORAGE.keys[key]) || [];
+    // 对导入的动作执行字段清理（BUG 7）
+    if (key === 'exercises' && Array.isArray(items)) {
+      items = items.map(e => typeof window.sanitizeFields === 'function' ? window.sanitizeFields(e) : e);
+    }
     if (merge && Array.isArray(items)) {
       const ids = new Set(existing.map(x => x.id));
       items.forEach(x => { if (!ids.has(x.id)) existing.push(x); });

@@ -148,12 +148,13 @@ Plans.confirmRemove = function(id) {
   const p = this.getById(id);
   if (!p) return;
   App.showModal(UI.confirmModal('删除计划', `确定删除「${p.name}」吗？`, '删除', '取消', true));
-  document.getElementById('modal-confirm-btn')?.addEventListener('click', () => {
+  const btn = document.getElementById('modal-confirm-btn');
+  if (btn) btn.addEventListener('click', () => {
     this.remove(id);
     App.closeModal();
     this.renderPage();
     App.showToast('已删除', 'info');
-  });
+  }, { once: true }); // BUG 10: 防止重复监听
 };
 
 Plans._showForm = function(existing) {
