@@ -84,49 +84,33 @@ App.closeModal = function() {
 };
 
 // ============== 预置种子数据 ==============
-const SEED_EXERCISES = [
-  // 热身 (7)
-  { name:'猫牛式', category:'热身', defaultRest:30, note:'脊柱灵活性', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'单杠拉背', category:'热身', defaultRest:30, note:'肩胛激活', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'蜘蛛趴', category:'热身', defaultRest:30, note:'髋关节灵活性', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'弹力带训练', category:'热身', defaultRest:30, note:'大臂外展+推肩', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'呼吸训练', category:'热身', defaultRest:15, note:'腹式/剑突/单腿/折刀/后纵隔/侧纵隔', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}],['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'伟大者拉伸', category:'热身', defaultRest:15, note:'胸椎+髋屈肌', fields:[['reps','次数','number',{unit:'次/侧',step:1}]] },
-  { name:'俯身臂屈伸', category:'热身', defaultRest:30, note:'', fields:[['weight','重量 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1}]] },
-  // 推 (8)
-  { name:'杠铃卧推', category:'推', defaultRest:120, note:'主项', fields:1 },
-  { name:'哑铃卧推', category:'推', defaultRest:90, note:'主项', fields:1 },
-  { name:'双杠臂屈伸（助力）', category:'推', defaultRest:90, note:'辅助', fields:1 },
-  { name:'上斜哑铃卧推', category:'推', defaultRest:90, note:'辅助', fields:1 },
-  { name:'反向飞鸟', category:'推', defaultRest:60, note:'体态（铁律首位）', fields:1 },
-  { name:'蝴蝶机夹胸', category:'推', defaultRest:60, note:'可选', fields:1 },
-  { name:'器械直臂下压', category:'推', defaultRest:60, note:'可选', fields:1 },
-  { name:'俯身哑铃后束飞鸟', category:'推', defaultRest:60, note:'可选', fields:1 },
-  // 拉 (8)
-  { name:'助力引体向上', category:'拉', defaultRest:120, note:'主项', fields:1 },
-  { name:'高位下拉', category:'拉', defaultRest:90, note:'辅助', fields:1 },
-  { name:'T杆划船', category:'拉', defaultRest:90, note:'辅助', fields:1 },
-  { name:'钢索划船', category:'拉', defaultRest:90, note:'辅助', fields:1 },
-  { name:'单臂哑铃划船', category:'拉', defaultRest:90, note:'辅助', fields:1 },
-  { name:'面拉', category:'拉', defaultRest:60, note:'体态（铁律首位）', fields:1 },
-  { name:'哑铃推肩', category:'拉', defaultRest:90, note:'记录在拉日', fields:1 },
-  { name:'静态悬挂', category:'拉', defaultRest:30, note:'握力训练', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  // 腿 (5)
-  { name:'保加利亚蹲', category:'腿', defaultRest:120, note:'主项', fields:1 },
-  { name:'罗马尼亚硬拉', category:'腿', defaultRest:120, note:'辅助', fields:1 },
-  { name:'后腿弓步蹲', category:'腿', defaultRest:90, note:'辅助', fields:1 },
-  { name:'山羊挺身', category:'腿', defaultRest:60, note:'辅助', fields:[['weight','重量 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1,required:true}]] },
-  { name:'哥本哈根支撑', category:'腿', defaultRest:60, note:'辅助', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  // 核心 (4)
-  { name:'平板支撑', category:'核心', defaultRest:45, note:'', fields:[['dur','时长 (秒)','number',{unit:'秒',step:5}]] },
-  { name:'锯式俯卧撑', category:'核心', defaultRest:60, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] },
-  { name:'卷腹', category:'核心', defaultRest:45, note:'', fields:[['weight','负重 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1,required:true}]] },
-  { name:'仰卧抬腿', category:'核心', defaultRest:45, note:'', fields:[['reps','次数','number',{unit:'次',step:1}]] }
+// 字段模板索引: 0=仅次数, 1=重量+次数, 2=仅时长, 3=时长+次数, 4=重量+次数(必填)
+const F = [
+  [['reps','次数','number',{unit:'次',step:1}]],
+  [['weight','重量 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1}]],
+  [['dur','时长 (秒)','number',{unit:'秒',step:5}]],
+  [['dur','时长 (秒)','number',{unit:'秒',step:5}],['reps','次数','number',{unit:'次',step:1}]],
+  [['weight','重量 (kg)','number',{unit:'kg',step:.5,required:true}],['reps','次数','number',{unit:'次',step:1,required:true}]]
 ];
-// fields: 1 表示标准 [weight, reps]，构造时用 newField 转换
-const STD = () => [
-  newField('weight', '重量 (kg)', 'number', { unit:'kg', step:.5, required:true }),
-  newField('reps', '次数', 'number', { unit:'次', step:1, required:true })
+// [name, category, rest, note, fieldIdx]
+const SE = [
+  ['猫牛式','热身',30,'脊柱灵活性',0],['单杠拉背','热身',30,'肩胛激活',0],
+  ['蜘蛛趴','热身',30,'髋关节灵活性',0],['弹力带训练','热身',30,'大臂外展+推肩',0],
+  ['呼吸训练','热身',15,'腹式/剑突/单腿/折刀/后纵隔/侧纵隔',3],
+  ['伟大者拉伸','热身',15,'胸椎+髋屈肌',0],['俯身臂屈伸','热身',30,'',1],
+  ['杠铃卧推','推',120,'主项',4],['哑铃卧推','推',90,'主项',4],
+  ['双杠臂屈伸（助力）','推',90,'辅助',4],['上斜哑铃卧推','推',90,'辅助',4],
+  ['反向飞鸟','推',60,'体态（铁律首位）',4],['蝴蝶机夹胸','推',60,'可选',4],
+  ['器械直臂下压','推',60,'可选',4],['俯身哑铃后束飞鸟','推',60,'可选',4],
+  ['助力引体向上','拉',120,'主项',4],['高位下拉','拉',90,'辅助',4],
+  ['T杆划船','拉',90,'辅助',4],['钢索划船','拉',90,'辅助',4],
+  ['单臂哑铃划船','拉',90,'辅助',4],['面拉','拉',60,'体态（铁律首位）',4],
+  ['哑铃推肩','拉',90,'记录在拉日',4],['静态悬挂','拉',30,'握力训练',2],
+  ['保加利亚蹲','腿',120,'主项',4],['罗马尼亚硬拉','腿',120,'辅助',4],
+  ['后腿弓步蹲','腿',90,'辅助',4],['山羊挺身','腿',60,'辅助',1],
+  ['哥本哈根支撑','腿',60,'辅助',2],
+  ['平板支撑','核心',45,'',2],['锯式俯卧撑','核心',60,'',0],
+  ['卷腹','核心',45,'',1],['仰卧抬腿','核心',45,'',0]
 ];
 
 const SEED_PLANS = [
@@ -136,59 +120,50 @@ const SEED_PLANS = [
 ];
 
 function seedDefaultData() {
-  // 种子版本标记——不受 SW 缓存影响
   const SEED_VER = 3;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
-  // 清理旧的待恢复训练（可能含有 Bug 字段数据）
   localStorage.removeItem('fitness_pending_training');
 
-  // 构造标准动作
+  // 构造动作: SE = [name, category, rest, note, fieldIdx], F[fieldIdx] = fields
   const exMap = {};
-  const newExercises = SEED_EXERCISES.map(e => {
-    const fields = e.fields === 1 ? STD() : e.fields.map(f => newField(f[0], f[1], f[2], f[3]));
-    const ex = newExercise(e.name, fields, { category:e.category, defaultRest:e.defaultRest, note:e.note, tags:[] });
-    exMap[e.name] = ex.id;
+  const newExercises = SE.map(e => {
+    const fields = F[e[4]].map(f => newField(f[0], f[1], f[2], f[3]));
+    const ex = newExercise(e[0], fields, { category:e[1], defaultRest:e[2], note:e[3], tags:[] });
+    exMap[e[0]] = ex.id;
     return ex;
   });
 
-  // 种子升级：替换所有旧种子动作（可能有字段 Bug），保留用户自建
-  const seedNames = new Set(SEED_EXERCISES.map(e => e.name));
+  // 种子升级：替换旧种子，保留用户自建
+  const seedNames = new Set(SE.map(e => e[0]));
   const existing = STORAGE.get(STORAGE.keys.exercises) || [];
 
-  // 构建旧ID→新ID映射，用于重映射计划引用
   const oldToNewId = {};
   existing.filter(e => seedNames.has(e.name)).forEach(old => {
     if (exMap[old.name]) oldToNewId[old.id] = exMap[old.name];
   });
 
-  // 保留用户自建的非种子动作（同时也修复用户自建的字段——如果是数组则转换）
   const userExercises = existing.filter(e => !seedNames.has(e.name)).map(sanitizeFields);
-  // 合并：用户自建（已修复） + 新种子
   const merged = [...userExercises, ...newExercises];
   STORAGE.set(STORAGE.keys.exercises, merged);
 
-  // 合并已有计划（按名称去重），同时重映射旧种子动作的 ID
-  const newPlans = SEED_PLANS.map(p =>
-    newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] })))
-  );
+  // 计划：重映射旧引用 + 添加新计划
   const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
   let plansChanged = false;
-  // 重映射现有计划中的旧种子动作 ID
   existingPlans.forEach(p => {
     (p.exercises || []).forEach(pe => {
       if (oldToNewId[pe.exerciseId]) { pe.exerciseId = oldToNewId[pe.exerciseId]; plansChanged = true; }
     });
   });
   const planNames = new Set(existingPlans.map(p => p.name));
-  const mergedPlans = [...existingPlans];
-  newPlans.forEach(p => {
-    if (!planNames.has(p.name)) { mergedPlans.push(p); plansChanged = true; }
+  SEED_PLANS.forEach(p => {
+    if (!planNames.has(p.name)) {
+      existingPlans.push(newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] }))));
+      plansChanged = true;
+    }
   });
-  if (plansChanged) {
-    STORAGE.set(STORAGE.keys.plans, mergedPlans);
-  }
+  if (plansChanged) STORAGE.set(STORAGE.keys.plans, existingPlans);
 
   localStorage.setItem('fitness_seed_version', String(SEED_VER));
   localStorage.setItem('fitness_onboarding_complete', 'true');
@@ -254,8 +229,6 @@ App.init = function() {
 
   const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
   this.navigate(settings.lastActiveTab || 'training');
-
-  if (window.Onboarding && Onboarding.shouldShow()) Onboarding.start();
 
   this.on('pageChange', (page) => {
     switch (page) {

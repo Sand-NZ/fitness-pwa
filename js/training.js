@@ -90,6 +90,7 @@ Training._loadPlanExercise = function(index) {
   if (this.currentExercise && this.setData.length > 0) {
     if (!this._completedExercises) this._completedExercises = [];
     this._completedExercises.push({
+      exerciseId: this.currentExercise.id,
       name: this.currentExercise.name,
       tags: this.currentExercise.tags || [],
       sets: this.setData.map(s => ({ ...s })),

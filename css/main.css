@@ -21,6 +21,22 @@
   --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
   --max-width: 480px;
+  /* 颜色 */
+  --bg: #f5f5f7;
+  --bg-header: rgba(245, 245, 247, 0.85);
+  --bg-nav: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
+  --bg-input: #f0f0f2;
+  --bg-modal: #ffffff;
+  --text: #1c1c1e;
+  --text-secondary: #8e8e93;
+  --border: #d1d1d6;
+  --accent: #007aff;
+  --accent-light: #e8f0fe;
+  --danger: #ff3b30;
+  --success: #34c759;
+  --warning: #ff9500;
+  --chart-bg: #ffffff;
 }
 
 html, body {

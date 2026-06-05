@@ -38,39 +38,6 @@ Settings.renderPage = function() {
   html += `<button class="btn btn-secondary btn-sm" onclick="Settings.addTag()" style="margin-top:8px">+ 添加标签</button>
   </div>`;
 
-  // ====== 触觉与声音 ======
-  html += `<div class="card" style="margin-bottom:12px">
-    <div class="form-section-title">🔊 触觉与声音</div>
-
-    <div class="setting-item">
-      <div class="setting-label">声音提示</div>
-      <label class="toggle-switch">
-        <input type="checkbox" ${settings.soundEnabled ? 'checked' : ''} onchange="Settings.updateSetting('soundEnabled', this.checked)">
-        <span class="toggle-track"></span>
-      </label>
-    </div>
-
-    <div class="setting-item">
-      <div class="setting-label">振动模式</div>
-      <select class="form-select" style="width:auto" onchange="Settings.updateSetting('vibrateOnEnd', this.value)">
-        <option value="short" ${settings.vibrateOnEnd === 'short' ? 'selected' : ''}>短振动</option>
-        <option value="long" ${settings.vibrateOnEnd === 'long' ? 'selected' : ''}>长振动</option>
-        <option value="none" ${settings.vibrateOnEnd === 'none' ? 'selected' : ''}>关闭</option>
-      </select>
-    </div>
-
-    <div class="setting-item">
-      <div>
-        <div class="setting-label">计时器模式</div>
-        <div class="setting-desc">组间休息计时</div>
-      </div>
-      <select class="form-select" style="width:auto" onchange="Settings.updateSetting('timerMode', this.value)">
-        <option value="countdown" ${settings.timerMode === 'countdown' ? 'selected' : ''}>倒计时</option>
-        <option value="stopwatch" ${settings.timerMode === 'stopwatch' ? 'selected' : ''}>秒表</option>
-      </select>
-    </div>
-  </div>`;
-
   // ====== 数据管理 ======
   html += `<div class="card" style="margin-bottom:12px">
     <div class="form-section-title">💾 数据管理</div>
@@ -170,15 +137,6 @@ Settings.updateSetting = function(key, value) {
   const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
   settings[key] = value;
   STORAGE.set(STORAGE.keys.settings, settings);
-};
-
-Settings.updateTheme = function(mode) {
-  if (window.Theme) Theme.apply(mode);
-};
-
-Settings.toggleSunrise = function(enabled) {
-  this.updateSetting('sunriseSunsetEnabled', enabled);
-  if (enabled && window.Theme) Theme.applySunriseSunset();
 };
 
 // ---------- 标签管理 ----------
@@ -307,12 +265,6 @@ Settings.doImport = function() {
     App.showToast('导入失败: ' + err.message, 'error');
   });
   input.value = '';
-};
-
-// ---------- 辅助 ----------
-Settings._themeLabel = function(mode) {
-  const labels = { auto: '跟随系统', light: '浅色', dark: '深色', amber: '护眼琥珀' };
-  return labels[mode] || mode;
 };
 
 if (typeof window !== 'undefined') {
