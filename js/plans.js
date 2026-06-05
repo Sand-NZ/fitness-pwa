@@ -105,6 +105,7 @@ Plans.renderPage = function() {
             <button class="btn btn-ghost btn-sm" data-plan-id="${p.id}" data-action="${isActive ? 'deactivate' : 'activate'}">${isActive ? '取消激活' : '⭐'}</button>
             <button class="btn btn-ghost btn-sm" onclick="Plans.showEditForm('${p.id}')">✏️</button>
             <button class="btn btn-ghost btn-sm" onclick="Plans.confirmRemove('${p.id}')" style="color:var(--danger)">🗑️</button>
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Backup.exportSinglePlan('${p.id}')" style="color:var(--text-secondary)">📤</button>
           </div>
         </div>
         <div class="card-subtitle">${p.exercises.length} 个动作</div>

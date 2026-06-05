@@ -27,7 +27,7 @@ Training.init = function() {
   this.setData = [];
   this.currentSet = 0;
   this._completedExercises = [];
-  Timer.init({ mode: 'countdown', duration: 60 });
+  Timer.init({});
 
   // 绑定训练页顶部模式切换按钮
   this._wireToggleButtons();
@@ -60,6 +60,8 @@ Training.startFree = function() {
   this.currentExercise = null;
   this.currentSet = 0;
   this.setData = [];
+  Timer.reset();
+  Timer.start();
   this.renderPage();
   App.showToast('自由训练已开始', 'success');
 };
@@ -77,6 +79,8 @@ Training.startPlan = function(planId) {
   this.currentExerciseIndex = 0;
   this._completedExercises = [];
   this._loadPlanExercise(0);
+  Timer.reset();
+  Timer.start();
   this.renderPage();
   App.showToast('计划训练已开始', 'success');
 };
@@ -113,7 +117,7 @@ Training._loadPlanExercise = function(index) {
 
   this.currentSet = 0;
   this.setsRemaining = 3; // 默认3组
-  Timer.init({ mode: 'countdown', duration: this.currentExercise.defaultRest || 90 });
+  this._applyWeightMemory(planEx.exerciseId);
   this.renderPage();
 };
 
@@ -125,8 +129,26 @@ Training.selectExercise = function(exerciseId) {
   this._currentExerciseId = exerciseId;
   this.currentSet = 0;
   this.setData = [];
-  Timer.init({ mode: 'countdown', duration: this.currentExercise.defaultRest || 90 });
+  // 重量记忆：查找最近一次该动作的重量记录
+  this._applyWeightMemory(exerciseId);
   this.renderPage();
+};
+
+// 重量记忆：从最近的训练记录中查找该动作的上次重量
+Training._applyWeightMemory = function(exerciseId) {
+  const records = STORAGE.get(STORAGE.keys.records) || [];
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    const ec = (r.exercisesCompleted || []).find(e => e.exerciseId === exerciseId);
+    if (ec && ec.sets && ec.sets.length > 0) {
+      const lastSet = ec.sets[ec.sets.length - 1];
+      if (lastSet.weight != null) {
+        this._lastWeight = lastSet.weight;
+      }
+      return;
+    }
+  }
+  this._lastWeight = null;
 };
 
 Training.selectFreeExerciseByName = function(name) {
@@ -138,7 +160,6 @@ Training.selectFreeExerciseByName = function(name) {
   this._freeExerciseName = name;
   this.currentSet = 0;
   this.setData = [];
-  Timer.init({ mode: 'countdown', duration: 60 });
   this.renderPage();
 };
 
@@ -171,22 +192,6 @@ Training.recordSet = function(formData) {
 
   this.setData.push(set);
   this.currentSet++;
-
-  // 自动开始休息计时
-  const restTime = this.currentExercise.defaultRest || 90;
-  Timer.init({
-    mode: 'countdown',
-    duration: restTime,
-    onTick: (s, fmt) => this._updateTimerDisplay(fmt, s),
-    onEnd: () => {
-      Timer.playEndSound();
-      const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
-      if (settings.vibrateOnEnd !== 'none') Timer.vibrate(settings.vibrateOnEnd);
-      this._updateTimerDisplay('休息结束', 0);
-    }
-  });
-  Timer.start();
-
   this.renderPage();
   return true;
 };
@@ -197,6 +202,7 @@ Training._switchExercise = function() {
   if (this.currentExercise && this.setData.length > 0) {
     if (!this._completedExercises) this._completedExercises = [];
     this._completedExercises.push({
+      exerciseId: this.currentExercise.id,
       name: this.currentExercise.name,
       tags: this.currentExercise.tags || [],
       sets: this.setData.map(s => ({ ...s })),
@@ -281,6 +287,7 @@ Training._saveAndEnd = function() {
   // 对于当前动作，如果它有记录组，就保存
   if (this.currentExercise && this.setData.length > 0) {
     exercisesCompleted.push({
+      exerciseId: this.currentExercise.id,
       name: this.currentExercise.name,
       tags: this.currentExercise.tags || [],
       sets: this.setData.map(s => ({ ...s })),
@@ -369,12 +376,6 @@ Training.restorePending = function() {
   }
 };
 
-// ---------- UI 更新 ----------
-Training._updateTimerDisplay = function(formatted, seconds) {
-  const el = document.getElementById('timer-display');
-  if (el) el.textContent = formatted;
-};
-
 // ---------- 页面渲染 ----------
 Training.renderPage = function() {
   const container = document.getElementById('training-content');
@@ -399,8 +400,24 @@ Training.renderPage = function() {
 };
 
 Training._renderInactive = function() {
-  let html = `<div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px 0">`;
-  html += UI.emptyState('🏋️', '准备开始训练', '');
+  // 今日概览
+  const today = new Date().toISOString().slice(0, 10);
+  const allRecords = STORAGE.get(STORAGE.keys.records) || [];
+  const todayRecords = allRecords.filter(r => r.date.slice(0, 10) === today);
+  const todaySessions = todayRecords.length;
+  const todaySets = todayRecords.reduce((sum, r) =>
+    sum + (r.exercisesCompleted || []).reduce((s, ec) => s + (ec.sets || []).length, 0), 0);
+
+  let html = '<div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 0">';
+
+  // 今日卡片
+  html += `<div class="card" style="width:100%;max-width:320px;text-align:center;margin-bottom:8px">
+    <div style="font-size:0.8rem;color:var(--text-secondary)">📅 ${today}</div>
+    <div style="display:flex;justify-content:center;gap:24px;margin:8px 0">
+      <div><div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${todaySessions}</div><div style="font-size:0.7rem;color:var(--text-secondary)">今日训练</div></div>
+      <div><div style="font-size:1.5rem;font-weight:700;color:var(--accent)">${todaySets}</div><div style="font-size:0.7rem;color:var(--text-secondary)">今日组数</div></div>
+    </div>
+  </div>`;
 
   // 自由模式按钮
   html += `<button class="btn btn-primary btn-lg" onclick="Training.startFree()" style="width:200px">🎯 开始自由训练</button>`;
@@ -447,13 +464,10 @@ Training._renderActive = function() {
       </div>
     </div>`;
 
-  // 计时器
-  html += `<div style="text-align:center;padding:12px 0">
-    <div id="timer-display" style="font-size:2.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)">${Timer.format()}</div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-      <button class="btn btn-sm btn-secondary" onclick="Timer.togglePause()">${Timer.paused ? '▶' : '⏸'}</button>
-      <button class="btn btn-sm btn-secondary" onclick="Timer.reset();Training.renderPage()">↺</button>
-    </div>
+  // 计时器（总用时）
+  html += `<div style="text-align:center;padding:8px 0">
+    <div style="font-size:0.8rem;color:var(--text-secondary)">⏱ 训练用时</div>
+    <div id="timer-display" style="font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)">${Timer.format()}</div>
   </div>`;
 
   html += '</div>'; // end card
@@ -464,7 +478,9 @@ Training._renderActive = function() {
     <form id="set-form" onsubmit="return false">`;
 
   (ex.fields || []).forEach(f => {
-    html += Exercises.renderFieldInput(f, null);
+    let defaultValue = null;
+    if (f.key === 'weight' && this._lastWeight != null) defaultValue = this._lastWeight;
+    html += Exercises.renderFieldInput(f, defaultValue);
   });
 
   html += `<button type="button" class="btn btn-primary btn-lg" onclick="Training._submitSet()" style="width:100%;margin-top:8px">✅ 记录本组</button>

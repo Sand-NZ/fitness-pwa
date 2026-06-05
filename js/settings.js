@@ -13,35 +13,6 @@ Settings.renderPage = function() {
 
   let html = '';
 
-  // ====== 外观 ======
-  html += `<div class="card" style="margin-bottom:12px">
-    <div class="form-section-title">🎨 外观</div>
-
-    <div class="setting-item">
-      <div>
-        <div class="setting-label">深色模式</div>
-        <div class="setting-desc">当前: ${this._themeLabel(settings.darkMode)}</div>
-      </div>
-      <select class="form-select" style="width:auto" onchange="Settings.updateTheme(this.value)" id="theme-select">
-        <option value="auto" ${settings.darkMode === 'auto' ? 'selected' : ''}>跟随系统</option>
-        <option value="light" ${settings.darkMode === 'light' ? 'selected' : ''}>浅色</option>
-        <option value="dark" ${settings.darkMode === 'dark' ? 'selected' : ''}>深色</option>
-        <option value="amber" ${settings.darkMode === 'amber' ? 'selected' : ''}>护眼琥珀</option>
-      </select>
-    </div>
-
-    <div class="setting-item">
-      <div>
-        <div class="setting-label">日出日落自动切换</div>
-        <div class="setting-desc">需地理位置授权</div>
-      </div>
-      <label class="toggle-switch">
-        <input type="checkbox" ${settings.sunriseSunsetEnabled ? 'checked' : ''} onchange="Settings.toggleSunrise(this.checked)">
-        <span class="toggle-track"></span>
-      </label>
-    </div>
-  </div>`;
-
   // ====== 标签管理 ======
   html += `<div class="card" style="margin-bottom:12px">
     <div class="form-section-title">🏷️ 标签管理</div>`;
@@ -106,20 +77,32 @@ Settings.renderPage = function() {
 
     <div class="setting-item">
       <div>
-        <div class="setting-label">全量导出</div>
-        <div class="setting-desc">导出所有数据为 JSON</div>
+        <div class="setting-label">导出动作库</div>
+        <div class="setting-desc">所有动作为 JSON</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="Backup.exportExercises()">导出</button>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">导出训练计划</div>
+        <div class="setting-desc">所有计划为 JSON</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="Backup.exportPlans()">导出</button>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">导出训练记录</div>
+        <div class="setting-desc">所有记录为 JSON</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="Backup.exportRecords()">导出</button>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">全量备份</div>
+        <div class="setting-desc">导出所有数据</div>
       </div>
       <button class="btn btn-secondary btn-sm" onclick="Backup.exportFull()">导出</button>
     </div>
-
-    <div class="setting-item">
-      <div>
-        <div class="setting-label">增量导出</div>
-        <div class="setting-desc">上次导出后的新记录</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="Backup.exportIncremental()">导出</button>
-    </div>
-
     <div class="setting-item">
       <div>
         <div class="setting-label">导入数据</div>
@@ -134,15 +117,6 @@ Settings.renderPage = function() {
         <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-input').click()">导入</button>
       </div>
     </div>
-
-    <div class="setting-item">
-      <div>
-        <div class="setting-label">备份密码</div>
-        <div class="setting-desc">导出时加密（可选）</div>
-      </div>
-      <input type="password" class="form-input" style="width:140px" value="${settings.backupPassword || ''}" placeholder="留空不加密" onchange="Settings.updateSetting('backupPassword', this.value || null)">
-    </div>
-
     <div class="setting-item" style="border-bottom:none">
       <div>
         <div class="setting-label" style="color:var(--danger)">清空所有数据</div>

@@ -43,6 +43,15 @@ Records.remove = function(id) {
   return true;
 };
 
+Records.update = function(id, updates) {
+  this.getAll();
+  const idx = this.data.findIndex(r => r.id === id);
+  if (idx === -1) return null;
+  Object.assign(this.data[idx], updates);
+  this.save();
+  return this.data[idx];
+};
+
 // ---------- 查询与筛选 ----------
 Records.query = function(opts = {}) {
   let results = this.getAll();

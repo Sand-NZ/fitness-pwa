@@ -179,9 +179,19 @@ Exercises.renderFieldInput = function(field, value) {
   }
 };
 
+// ---------- 获取动作使用历史（最后一次使用时间） ----------
+Exercises.getLastUsed = function(exerciseId, exerciseName) {
+  const records = STORAGE.get(STORAGE.keys.records) || [];
+  for (const r of records) {
+    const found = (r.exercisesCompleted || []).find(ec => ec.exerciseId === exerciseId || ec.name === exerciseName);
+    if (found) return r.date;
+  }
+  return null;
+};
+
 // ---------- 页面渲染 ----------
 let _searchQuery = '';
-let _selectedTagIds = [];
+let _activeCategory = 'all';
 
 Exercises.renderPage = function() {
   const container = document.getElementById('exercises-content');
@@ -190,7 +200,7 @@ Exercises.renderPage = function() {
   Tags.load();
   this.load();
 
-  // 绑定头部按钮（一次性）
+  // 绑定头部按钮
   const headerBtn = document.getElementById('btn-add-exercise');
   if (headerBtn && !headerBtn._listenerAttached) {
     headerBtn.addEventListener('click', () => Exercises.showAddForm());
@@ -202,23 +212,53 @@ Exercises.renderPage = function() {
   // 搜索
   html += UI.searchBar('搜索动作名称、分类…', _searchQuery);
 
-  // 标签筛选
-  html += '<div class="tag-filter-strip" id="exercise-tag-filter">';
-  Tags.getAll().forEach(t => {
-    const active = _selectedTagIds.includes(t.id) ? 'active' : '';
-    html += `<span class="tag-filter-item ${active}" data-tag-id="${t.id}" style="border-color:${t.color};${active ? 'background:'+t.color+';color:#fff' : 'color:'+t.color}">${Esc.html(t.name)}</span>`;
-  });
-  html += '</div>';
-
-  // 动作列表
-  let filtered = this.getAll();
+  // 分类标签（平铺显示所有分类）
+  const all = this.getAll();
+  let filtered = all;
   if (_searchQuery) filtered = this.search(_searchQuery);
-  if (_selectedTagIds.length) filtered = this.filterByTags(_selectedTagIds);
+
+  // 获取所有分类
+  const categories = {};
+  filtered.forEach(ex => {
+    const cat = ex.category || '未分类';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(ex);
+  });
+
+  // 按分类顺序排列
+  const catOrder = ['热身', '推', '拉', '腿', '核心'];
+  const sortedCats = Object.keys(categories).sort((a, b) => {
+    const ia = catOrder.indexOf(a); const ib = catOrder.indexOf(b);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1; if (ib >= 0) return 1;
+    return a.localeCompare(b);
+  });
 
   if (filtered.length === 0) {
-    html += UI.emptyState('🏗️', this.getAll().length === 0 ? '还没有动作，点击下方按钮添加第一个' : '没有匹配的动作', '<button class="btn btn-primary btn-sm" onclick="Exercises.showAddForm()">+ 添加动作</button>');
+    html += UI.emptyState('🏗️', all.length === 0 ? '还没有动作，点击下方按钮添加第一个' : '没有匹配的动作',
+      '<button class="btn btn-primary btn-sm" onclick="Exercises.showAddForm()">+ 添加动作</button>');
   } else {
-    html += filtered.map(ex => this._renderCard(ex)).join('\n');
+    sortedCats.forEach(cat => {
+      const exercises = categories[cat];
+      html += `<div class="card" style="margin-bottom:10px;padding:10px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
+          <span style="font-weight:600;font-size:0.95rem">${Esc.html(cat)} <span style="font-weight:400;color:var(--text-secondary)">(${exercises.length})</span></span>
+          <span style="color:var(--text-secondary)">▾</span>
+        </div>
+        <div style="margin-top:8px">`;
+      exercises.forEach(ex => {
+        const lastUsed = this.getLastUsed(ex.id, ex.name);
+        const lastUsedText = lastUsed ? `<span style="font-size:0.7rem;color:var(--text-secondary)">上次: ${UI.formatShortDate(lastUsed)}</span>` : '';
+        html += `<div class="list-item" style="cursor:pointer;padding:8px 0" onclick="Exercises.showEditForm('${ex.id}')">
+          <div class="list-item-content">
+            <div class="list-item-title">${Esc.html(ex.name)} ${lastUsedText}</div>
+            <div class="list-item-desc">${(ex.fields||[]).length} 字段 · 休息 ${ex.defaultRest || 90}s${ex.note ? ' · ' + Esc.html(ex.note) : ''}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Exercises.remove('${ex.id}');Exercises.renderPage();App.showToast('已删除','info')" style="color:var(--danger)">🗑️</button>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
   }
 
   // 浮动添加按钮
@@ -228,39 +268,11 @@ Exercises.renderPage = function() {
 
   container.innerHTML = html;
 
-  // 绑定标签筛选
-  container.querySelectorAll('#exercise-tag-filter .tag-filter-item').forEach(el => {
-    el.addEventListener('click', () => {
-      const id = el.dataset.tagId;
-      const idx = _selectedTagIds.indexOf(id);
-      if (idx >= 0) _selectedTagIds.splice(idx, 1);
-      else _selectedTagIds.push(id);
-      this.renderPage();
-    });
-  });
-
   // 绑定搜索
   container.querySelector('.search-input')?.addEventListener('input', (e) => {
     _searchQuery = e.target.value;
     this.renderPage();
   });
-};
-
-Exercises._renderCard = function(ex) {
-  const tagsHtml = Tags.renderBadgesForExercise(ex);
-  const fieldSummary = (ex.fields || []).map(f => `${f.label}(${f.type})`).join(', ');
-  return `<div class="card" onclick="Exercises.showEditForm('${ex.id}')" style="cursor:pointer">
-    <div class="card-header">
-      <span class="card-title">${Esc.html(ex.name)}</span>
-      <div>
-        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Exercises.remove('${ex.id}');Exercises.renderPage();App.showToast('已删除','info')">🗑️</button>
-      </div>
-    </div>
-    ${ex.category ? `<div class="card-subtitle">分类: ${Esc.html(ex.category)}</div>` : ''}
-    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${tagsHtml}</div>
-    ${fieldSummary ? `<div style="margin-top:6px;font-size:0.75rem;color:var(--text-secondary)">字段: ${Esc.html(fieldSummary)}</div>` : ''}
-    ${ex.note ? `<div style="margin-top:4px;font-size:0.75rem;color:var(--text-secondary)">💬 ${Esc.html(ex.note)}</div>` : ''}
-  </div>`;
 };
 
 // ---------- 添加/编辑表单 ----------

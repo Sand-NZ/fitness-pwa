@@ -12,18 +12,12 @@ const MODELS = {
 function defaultSettings() {
   return {
     activePlanId: null,
-    timerMode: 'countdown',
-    soundEnabled: true,
-    vibrateOnEnd: 'short',
-    darkMode: 'auto',
     lastActiveTab: 'training',
     lastMode: 'free',
-    sunriseSunsetEnabled: false,
     autoDefaultWeight: null,
     webdavUrl: null,
     webdavUsername: null,
-    webdavPassword: null,
-    backupPassword: null
+    webdavPassword: null
   };
 }
 

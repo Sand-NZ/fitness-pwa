@@ -115,6 +115,7 @@ Stats.renderPage = function() {
         <div style="font-size:0.8rem;color:var(--text-secondary)">${Esc.html(exNames)}</div>
         <div id="stats-record-detail-${r.id}" class="hidden" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"></div>
         <div style="margin-top:6px;text-align:right">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.editRecord('${r.id}')" style="color:var(--accent);font-size:0.75rem">✏️ 编辑</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.deleteRecord('${r.id}')" style="color:var(--danger);font-size:0.75rem">🗑️ 删除</button>
         </div>
       </div>`;
@@ -151,6 +152,48 @@ Stats._toggleDetail = function(id) {
 
   detail.innerHTML = html;
   detail.classList.remove('hidden');
+};
+
+// ---------- 编辑记录 ----------
+Stats.editRecord = function(id) {
+  const r = Records.getById(id);
+  if (!r) return;
+  const html = `<h2>编辑训练记录</h2>
+    <form id="edit-record-form">
+      <div class="form-group">
+        <label class="form-label">体重 (kg)</label>
+        <input type="number" class="form-input" name="weight" value="${r.weight || 0}" step="0.1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">RPE (1-10)</label>
+        <input type="range" class="form-input" name="rpe" min="1" max="10" value="${r.rpe || 5}" oninput="this.nextElementSibling.textContent=this.value">
+        <span style="font-size:1.2rem;font-weight:700;color:var(--accent)">${r.rpe || 5}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" name="note" placeholder="训练感受">${Esc.html(r.note || '')}</textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="App.closeModal()">取消</button>
+        <button type="button" class="btn btn-primary" onclick="Stats._saveEdit('${id}')">保存</button>
+      </div>
+    </form>`;
+  App.showModal(html);
+};
+
+Stats._saveEdit = function(id) {
+  const form = document.getElementById('edit-record-form');
+  if (!form) return;
+  const fd = new FormData(form);
+  const updates = {
+    weight: parseFloat(fd.get('weight')) || 0,
+    rpe: parseInt(fd.get('rpe')) || 5,
+    note: fd.get('note') || ''
+  };
+  Records.update(id, updates);
+  App.closeModal();
+  this.renderPage();
+  App.showToast('已更新', 'success');
 };
 
 // ---------- 删除记录 ----------
