@@ -76,7 +76,7 @@ Exercises.search = function(query) {
 Exercises.filterByTags = function(tagIds) {
   if (!tagIds.length) return this.getAll();
   return this.getAll().filter(e =>
-    tagIds.some(tid => e.tags.includes(tid))
+    (e.tags || []).some(tid => tagIds.includes(tid))
   );
 };
 
@@ -318,11 +318,11 @@ Exercises._showForm = function(existing) {
           <label class="form-label">分类</label>
           <input type="text" class="form-input" name="category" value="${Esc.html(ex.category || '')}" placeholder="例如：胸部" list="category-list">
           <datalist id="category-list">
-            <option value="胸">
-            <option value="肩">
-            <option value="背">
+            <option value="热身">
+            <option value="推">
+            <option value="拉">
             <option value="腿">
-            <option value="手臂">
+            <option value="核心">
             <option value="腹部">
             <option value="有氧">
             <option value="全身">
@@ -338,7 +338,7 @@ Exercises._showForm = function(existing) {
         <div class="chip-group">`;
 
   Tags.getAll().forEach(t => {
-    const selected = ex.tags.includes(t.id) ? 'selected' : '';
+    const selected = (ex.tags || []).includes(t.id) ? 'selected' : '';
     html += `<span class="chip ${selected}" data-tag-id="${t.id}" style="border-color:${t.color}">${Esc.html(t.name)}</span>`;
   });
 

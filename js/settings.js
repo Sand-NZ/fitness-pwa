@@ -1,6 +1,6 @@
 /**
  * settings.js — 设置页面渲染
- * 依赖：theme.js, backup.js, tags.js
+ * 依赖：backup.js, tags.js
  */
 const Settings = {};
 

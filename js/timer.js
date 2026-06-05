@@ -53,7 +53,6 @@ Timer.stop = function() {
 Timer.reset = function() {
   this.stop();
   this.elapsed = 0;
-  this._pausedElapsed = 0;
   if (this.onTick) this.onTick(0, this.format(0));
 };
 

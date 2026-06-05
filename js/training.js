@@ -60,6 +60,8 @@ Training.startFree = function() {
   this.currentExercise = null;
   this.currentSet = 0;
   this.setData = [];
+  this._completedExercises = [];
+  localStorage.removeItem('fitness_pending_training');
   Timer.reset();
   Timer.start();
   this.renderPage();
@@ -164,7 +166,11 @@ Training.selectFreeExerciseByName = function(name) {
   this.setData = [];
   // 尝试匹配库中同名动作的重量记忆
   const match = Exercises.getAll().find(e => e.name === name);
-  if (match) this._applyWeightMemory(match.id);
+  if (match) {
+    this.currentExercise.id = match.id;
+    this._currentExerciseId = match.id;
+    this._applyWeightMemory(match.id);
+  }
   this.renderPage();
 };
 
@@ -338,9 +344,10 @@ Training._saveAndEnd = function() {
   this.currentExercise = null;
   this.setData = [];
   this.currentSet = 0;
+  this._completedExercises = [];
   Timer.stop();
 
-  localStorage.removeItem('fitness_pending_training'); // BUG 1+5
+  localStorage.removeItem('fitness_pending_training');
   App.closeModal();
   this.renderPage();
   App.showToast('✅ 训练记录已保存', 'success');
@@ -577,7 +584,12 @@ Training._submitSet = function() {
 
 // ---------- 取消训练 ----------
 Training._cancelTraining = function() {
-  localStorage.removeItem('fitness_pending_training'); // BUG 5
+  localStorage.removeItem('fitness_pending_training');
+  this.planId = null;
+  this.currentExerciseIndex = 0;
+  this._freeExerciseName = '';
+  this._currentExerciseId = null;
+  this._lastWeight = null;
   this.isActive = false;
   this.currentExercise = null;
   this.setData = [];

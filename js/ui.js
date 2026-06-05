@@ -30,6 +30,13 @@ UI.formatShortDate = function(iso) {
   return `${d.getMonth()+1}/${d.getDate()}`;
 };
 
+UI.renderSetData = function(set, fields) {
+  return (fields || []).map(f => {
+    const val = set[f.key];
+    return val != null ? `${f.label}: ${val}` : '';
+  }).filter(Boolean).join(' · ') || '—';
+};
+
 const Esc = {
   html: function(str) {
     if (str == null) return '';
