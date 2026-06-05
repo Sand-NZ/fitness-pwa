@@ -141,14 +141,15 @@ Stats._toggleDetail = function(id) {
   if (!r) return;
 
   let html = '';
-  (r.exercisesCompleted || []).forEach(ec => {
-    html += `<div style="margin-bottom:6px"><strong>${Esc.html(ec.name)}</strong></div>`;
-    (ec.sets || []).forEach((s, i) => {
-      const parts = Object.entries(s).map(([k, v]) => `${Esc.html(k)}: ${Esc.html(v)}`).join(' · ');
-      html += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${parts}</div>`;
+  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
+    (ec.sets || []).forEach((s, setIdx) => {
+      // 按顺序列出所有字段值（不显示字段名）
+      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
+      html += `<div style="padding:2px 0;font-size:0.8rem">组 ${setIdx+1}: ${Esc.html(String(vals))}</div>`;
     });
   });
-  if (r.note) html += `<div style="margin-top:4px;font-size:0.8rem;color:var(--text-secondary)">备注: ${Esc.html(r.note)}</div>`;
+  if (r.note) html += `<div style="margin-top:4px;font-size:0.8rem;color:var(--text-secondary)">💬 ${Esc.html(r.note)}</div>`;
 
   detail.innerHTML = html;
   detail.classList.remove('hidden');
@@ -158,7 +159,7 @@ Stats._toggleDetail = function(id) {
 Stats.editRecord = function(id) {
   const r = Records.getById(id);
   if (!r) return;
-  const html = `<h2>编辑训练记录</h2>
+  let html = `<h2>编辑训练记录</h2>
     <form id="edit-record-form">
       <div class="form-group">
         <label class="form-label">体重 (kg)</label>
@@ -172,8 +173,22 @@ Stats.editRecord = function(id) {
       <div class="form-group">
         <label class="form-label">备注</label>
         <textarea class="form-textarea" name="note" placeholder="训练感受">${Esc.html(r.note || '')}</textarea>
-      </div>
-      <div class="modal-actions">
+      </div>`;
+
+  // 每组数据也可编辑
+  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+    html += `<div class="form-section"><div class="form-section-title">${Esc.html(ec.name)}</div>`;
+    (ec.sets || []).forEach((s, setIdx) => {
+      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
+      html += `<div class="form-group">
+        <label class="form-label" style="font-size:0.8rem">组 ${setIdx+1}</label>
+        <input type="text" class="form-input" name="set-${exIdx}-${setIdx}" value="${Esc.html(vals)}" placeholder="用空格分隔各值">
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  html += `<div class="modal-actions">
         <button type="button" class="btn btn-secondary" onclick="App.closeModal()">取消</button>
         <button type="button" class="btn btn-primary" onclick="Stats._saveEdit('${id}')">保存</button>
       </div>
@@ -182,14 +197,31 @@ Stats.editRecord = function(id) {
 };
 
 Stats._saveEdit = function(id) {
+  const r = Records.getById(id);
   const form = document.getElementById('edit-record-form');
-  if (!form) return;
+  if (!form || !r) return;
   const fd = new FormData(form);
   const updates = {
     weight: parseFloat(fd.get('weight')) || 0,
     rpe: parseInt(fd.get('rpe')) || 5,
     note: fd.get('note') || ''
   };
+
+  // 更新每组数据（如果提供了修改）
+  r.exercisesCompleted.forEach((ec, exIdx) => {
+    (ec.sets || []).forEach((s, setIdx) => {
+      const raw = fd.get(`set-${exIdx}-${setIdx}`);
+      if (raw && raw.trim()) {
+        const vals = raw.trim().split(/[\s·,，]+/);
+        const keys = Object.keys(s);
+        keys.forEach((k, i) => {
+          if (vals[i] !== undefined) s[k] = vals[i];
+        });
+      }
+    });
+  });
+  updates.exercisesCompleted = r.exercisesCompleted;
+
   Records.update(id, updates);
   App.closeModal();
   this.renderPage();

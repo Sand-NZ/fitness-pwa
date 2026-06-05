@@ -230,11 +230,11 @@ Records._toggleDetail = function(id) {
   (r.exercisesCompleted || []).forEach(ec => {
     html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
     (ec.sets || []).forEach((s, i) => {
-      const parts = Object.entries(s).map(([k, v]) => `${Esc.html(k)}: ${Esc.html(v)}`).join(' · ');
-      html += `<div style="padding:2px 0">组 ${i+1}: ${parts}</div>`;
+      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
+      html += `<div style="padding:2px 0">组 ${i+1}: ${Esc.html(String(vals))}</div>`;
     });
   });
-  if (r.note) html += `<div style="margin-top:4px;color:var(--text-secondary)">备注: ${Esc.html(r.note)}</div>`;
+  if (r.note) html += `<div style="margin-top:4px;color:var(--text-secondary)">💬 ${Esc.html(r.note)}</div>`;
 
   detail.innerHTML = html;
   detail.classList.remove('hidden');
