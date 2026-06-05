@@ -174,18 +174,19 @@ function seedDefaultData() {
     newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] })))
   );
   const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
+  let plansChanged = false;
   // 重映射现有计划中的旧种子动作 ID
   existingPlans.forEach(p => {
     (p.exercises || []).forEach(pe => {
-      if (oldToNewId[pe.exerciseId]) pe.exerciseId = oldToNewId[pe.exerciseId];
+      if (oldToNewId[pe.exerciseId]) { pe.exerciseId = oldToNewId[pe.exerciseId]; plansChanged = true; }
     });
   });
   const planNames = new Set(existingPlans.map(p => p.name));
   const mergedPlans = [...existingPlans];
   newPlans.forEach(p => {
-    if (!planNames.has(p.name)) mergedPlans.push(p);
+    if (!planNames.has(p.name)) { mergedPlans.push(p); plansChanged = true; }
   });
-  if (mergedPlans.length !== existingPlans.length) {
+  if (plansChanged) {
     STORAGE.set(STORAGE.keys.plans, mergedPlans);
   }
 
