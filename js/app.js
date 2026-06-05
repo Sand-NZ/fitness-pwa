@@ -223,7 +223,10 @@ App.init = function() {
     if (!STORAGE.get(STORAGE.keys[k])) STORAGE.set(STORAGE.keys[k], []);
   });
 
-  if (window.Theme) Theme.init();
+  // 固定浅色主题
+  document.documentElement.setAttribute('data-theme', 'light');
+  const meta = document.getElementById('meta-theme-color');
+  if (meta) meta.content = '#f5f5f7';
   if (window.Training) Training.init();
   this.initRouter();
 
