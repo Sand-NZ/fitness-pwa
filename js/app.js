@@ -156,17 +156,30 @@ function seedDefaultData() {
   // 种子升级：替换所有旧种子动作（可能有字段 Bug），保留用户自建
   const seedNames = new Set(SEED_EXERCISES.map(e => e.name));
   const existing = STORAGE.get(STORAGE.keys.exercises) || [];
+
+  // 构建旧ID→新ID映射，用于重映射计划引用
+  const oldToNewId = {};
+  existing.filter(e => seedNames.has(e.name)).forEach(old => {
+    if (exMap[old.name]) oldToNewId[old.id] = exMap[old.name];
+  });
+
   // 保留用户自建的非种子动作（同时也修复用户自建的字段——如果是数组则转换）
   const userExercises = existing.filter(e => !seedNames.has(e.name)).map(sanitizeFields);
   // 合并：用户自建（已修复） + 新种子
   const merged = [...userExercises, ...newExercises];
   STORAGE.set(STORAGE.keys.exercises, merged);
 
-  // 合并已有计划（按名称去重）
+  // 合并已有计划（按名称去重），同时重映射旧种子动作的 ID
   const newPlans = SEED_PLANS.map(p =>
     newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] })))
   );
   const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
+  // 重映射现有计划中的旧种子动作 ID
+  existingPlans.forEach(p => {
+    (p.exercises || []).forEach(pe => {
+      if (oldToNewId[pe.exerciseId]) pe.exerciseId = oldToNewId[pe.exerciseId];
+    });
+  });
   const planNames = new Set(existingPlans.map(p => p.name));
   const mergedPlans = [...existingPlans];
   newPlans.forEach(p => {

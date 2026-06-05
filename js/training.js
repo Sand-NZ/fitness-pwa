@@ -158,8 +158,12 @@ Training.selectFreeExerciseByName = function(name) {
     newField('reps', '次数', 'number', { unit: '次', step: 1, required: true })
   ]);
   this._freeExerciseName = name;
+  this._currentExerciseId = this.currentExercise.id;
   this.currentSet = 0;
   this.setData = [];
+  // 尝试匹配库中同名动作的重量记忆
+  const match = Exercises.getAll().find(e => e.name === name);
+  if (match) this._applyWeightMemory(match.id);
   this.renderPage();
 };
 
@@ -240,9 +244,9 @@ Training.nextExercise = function() {
   }
 };
 
-// ---------- 结束训练（去掉弹窗，直接结束） ----------
+// ---------- 结束训练 ----------
 Training.endTraining = function() {
-  this._saveAndEnd();
+  this.showEndModal();
 };
 
 Training.showEndModal = function() {
@@ -276,9 +280,18 @@ Training.showEndModal = function() {
 
 Training._saveAndEnd = function() {
   const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
-  const weight = settings.autoDefaultWeight || 0;
-  const rpe = 5;
-  const note = '';
+  // 读取结束弹窗表单（如果存在）
+  const form = document.getElementById('end-training-form');
+  let weight = settings.autoDefaultWeight || 0;
+  let rpe = 5;
+  let note = '';
+  if (form) {
+    const w = parseFloat(form.querySelector('[name="weight"]')?.value);
+    if (w && w > 0) weight = w;
+    const r = parseInt(form.querySelector('[name="rpe"]')?.value);
+    if (r >= 1 && r <= 10) rpe = r;
+    note = form.querySelector('[name="note"]')?.value || '';
+  }
 
   // 构建记录
   const exercisesCompleted = [];
@@ -345,34 +358,31 @@ Training.autoSave = function() {
 
 Training.restorePending = function() {
   const raw = localStorage.getItem('fitness_pending_training');
-  if (!raw) return;
+  if (!raw) return false;
   try {
     const p = JSON.parse(raw);
-    // 只恢复 24 小时内的
     if (Date.now() - p.timestamp > 86400000) {
       localStorage.removeItem('fitness_pending_training');
-      return;
+      return false;
     }
-    // 字段数据检查：如果 currentExercise 的 fields 里有数组（旧 Bug），丢弃
     if (p.currentExercise && Array.isArray(p.currentExercise.fields)) {
       const hasArrayFields = p.currentExercise.fields.some(f => Array.isArray(f));
       if (hasArrayFields) {
         localStorage.removeItem('fitness_pending_training');
-        return;
+        return false;
       }
     }
     this.mode = p.mode;
     this.planId = p.planId;
-    // 深度复制并修复字段
     this.currentExercise = p.currentExercise ? sanitizeFields(JSON.parse(JSON.stringify(p.currentExercise))) : null;
     this.currentSet = p.currentSet;
     this.setData = Array.isArray(p.setData) ? p.setData : [];
     this.startedAt = p.startedAt;
     this.isActive = true;
-    this.renderPage();
-    App.showToast('检测到未完成训练，已恢复', 'info');
+    return true;
   } catch (_) {
     localStorage.removeItem('fitness_pending_training');
+    return false;
   }
 };
 
@@ -388,8 +398,11 @@ Training.renderPage = function() {
   // 读取设置中的模式
   const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
   if (!this.isActive) {
-    // 尝试恢复
-    this.restorePending();
+    // 尝试恢复（restorePending 返回 true 表示恢复成功，不再重复渲染）
+    const restored = this.restorePending();
+    if (restored) {
+      App.showToast('检测到未完成训练，已恢复', 'info');
+    }
     if (!this.isActive) {
       container.innerHTML = this._renderInactive();
       return;

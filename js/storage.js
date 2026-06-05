@@ -202,8 +202,8 @@ STORAGE.decrypt = async function(payload, password) {
 };
 
 // 初始化版本
-// 初始化版本迁移
-STORAGE.migrate();
+// 初始化版本迁移（上面的 bind + migrate 已执行）
+// 此处的重复调用已移除
 
 if (typeof window !== 'undefined') {
   window.STORAGE = STORAGE;

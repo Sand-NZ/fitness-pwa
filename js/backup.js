@@ -38,7 +38,8 @@ Backup.exportRecords = function() {
 Backup.exportSinglePlan = function(planId) {
   const plan = (STORAGE.get(STORAGE.keys.plans) || []).find(p => p.id === planId);
   if (!plan) { App.showToast('计划不存在', 'warning'); return; }
-  this._download(JSON.stringify(plan, null, 2), `plan-${plan.name}-${this._date()}.json`);
+  const safeName = String(plan.name).replace(/[<>:"/\\|?*]/g, '_');
+  this._download(JSON.stringify(plan, null, 2), `plan-${safeName}-${this._date()}.json`);
 };
 
 // 全量导出
