@@ -317,26 +317,39 @@ Stats.setView = function(mode) {
   this.renderPage();
 };
 
-// ---------- 时间轴视图 ----------
+// ---------- 时间轴视图（按训练记录展开每个动作的组数据） ----------
 Stats._renderTimeline = function(records) {
-  let html = '<div style="position:relative;padding-left:20px">';
-  // 竖线
-  html += '<div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)"></div>';
+  let html = '<div style="position:relative;padding-left:24px">';
+  html += '<div style="position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border)"></div>';
 
   records.forEach(r => {
-    const exNames = (r.exercisesCompleted || []).map((ec, i) => `#${i+1} ${Esc.html(ec.name)}`).join(' · ');
     const dateStr = r.date.slice(0, 10);
     const timeStr = r.date.slice(11, 16);
-    html += `<div style="position:relative;margin-bottom:14px;padding-left:16px">
-      <div style="position:absolute;left:-16px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)"></div>
-      <div style="font-size:0.75rem;color:var(--text-secondary)">${dateStr} ${timeStr}</div>
-      <div style="font-size:0.85rem;font-weight:500;margin:2px 0">${Esc.html(r.planName)} · 体重 ${r.weight}kg</div>
-      <div style="font-size:0.75rem;color:var(--text-secondary)">${exNames}</div>
-      <div style="margin-top:4px;display:flex;gap:8px">
-        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.editRecord('${r.id}')" style="color:var(--accent);font-size:0.7rem">✏️ 编辑</button>
-        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.deleteRecord('${r.id}')" style="color:var(--danger);font-size:0.7rem">🗑️ 删除</button>
-      </div>
+
+    // 时间轴节点——训练记录头部
+    html += `<div style="position:relative;margin-bottom:16px;padding-left:18px">`;
+    html += `<div style="position:absolute;left:-14px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)"></div>`;
+    html += `<div style="font-size:0.75rem;color:var(--text-secondary)">${dateStr} ${timeStr}</div>`;
+    html += `<div style="font-size:0.85rem;font-weight:500;margin:2px 0">体重 ${r.weight}kg · ${UI.formatDuration(r.totalDuration || 0)}</div>`;
+
+    // 展开每个动作及其组
+    (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+      const fields = Stats._getFieldsFor(ec);
+      html += `<div style="margin:6px 0 4px 8px;padding:6px 10px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border)">`;
+      html += `<div style="font-size:0.8rem;font-weight:600;margin-bottom:4px">#${exIdx+1} ${Esc.html(ec.name)}</div>`;
+      (ec.sets || []).forEach((s, setIdx) => {
+        const vals = Stats._renderSetValues(s, fields);
+        html += `<div style="font-size:0.75rem;padding:2px 0;color:var(--text-secondary)">组 ${setIdx+1}: ${Esc.html(String(vals))}</div>`;
+      });
+      html += `</div>`;
+    });
+
+    // 编辑/删除
+    html += `<div style="margin-top:4px;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.editRecord('${r.id}')" style="color:var(--accent);font-size:0.7rem">✏️ 编辑</button>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.deleteRecord('${r.id}')" style="color:var(--danger);font-size:0.7rem">🗑️ 删除</button>
     </div>`;
+    html += `</div>`;
   });
 
   html += '</div>';

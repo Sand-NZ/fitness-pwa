@@ -50,15 +50,6 @@ Exercises.update = function(id, updates) {
 Exercises.remove = function(id) {
   this.getAll();
   this.data = this.data.filter(e => e.id !== id);
-  // 清理计划中对已删除动作的引用
-  if (window.Plans) {
-    const plans = Plans.getAll();
-    plans.forEach(p => {
-      const before = p.exercises.length;
-      p.exercises = p.exercises.filter(pe => pe.exerciseId !== id);
-      if (p.exercises.length !== before) Plans.update(p.id, { exercises: p.exercises });
-    });
-  }
   this.save();
   return true;
 };

@@ -51,13 +51,6 @@ Settings.renderPage = function() {
     </div>
     <div class="setting-item">
       <div>
-        <div class="setting-label">导出训练计划</div>
-        <div class="setting-desc">所有计划为 JSON</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="Backup.exportPlans()">导出</button>
-    </div>
-    <div class="setting-item">
-      <div>
         <div class="setting-label">导出训练记录</div>
         <div class="setting-desc">所有记录为 JSON</div>
       </div>

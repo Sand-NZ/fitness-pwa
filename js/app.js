@@ -3,7 +3,7 @@
  */
 const App = {
   currentPage: 'training',
-  pages: ['training', 'plans', 'exercises', 'stats', 'settings'],
+  pages: ['training', 'exercises', 'stats', 'settings'],
   listeners: {},
   _initialized: false
 };
@@ -113,12 +113,6 @@ const SE = [
   ['卷腹','核心',45,'',1],['仰卧抬腿','核心',45,'',0]
 ];
 
-const SEED_PLANS = [
-  { name:'推日', ex:['杠铃卧推','哑铃卧推','双杠臂屈伸（助力）','上斜哑铃卧推','反向飞鸟','蝴蝶机夹胸','器械直臂下压','俯身哑铃后束飞鸟'] },
-  { name:'拉日', ex:['助力引体向上','高位下拉','T杆划船','钢索划船','单臂哑铃划船','面拉','哑铃推肩','静态悬挂'] },
-  { name:'腿日', ex:['保加利亚蹲','罗马尼亚硬拉','后腿弓步蹲','山羊挺身','哥本哈根支撑'] }
-];
-
 function seedDefaultData() {
   const SEED_VER = 4;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
@@ -159,20 +153,13 @@ function seedDefaultData() {
   const merged = [...userExercises, ...newExercises];
   STORAGE.set(STORAGE.keys.exercises, merged);
 
-  // 计划：重映射旧引用 + 添加新计划
+  // 计划：重映射旧引用（保留已有计划）
   const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
   let plansChanged = false;
   existingPlans.forEach(p => {
     (p.exercises || []).forEach(pe => {
       if (oldToNewId[pe.exerciseId]) { pe.exerciseId = oldToNewId[pe.exerciseId]; plansChanged = true; }
     });
-  });
-  const planNames = new Set(existingPlans.map(p => p.name));
-  SEED_PLANS.forEach(p => {
-    if (!planNames.has(p.name)) {
-      existingPlans.push(newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] }))));
-      plansChanged = true;
-    }
   });
   if (plansChanged) STORAGE.set(STORAGE.keys.plans, existingPlans);
 
@@ -247,7 +234,6 @@ App.init = function() {
   this.on('pageChange', (page) => {
     switch (page) {
       case 'exercises': if (window.Exercises) Exercises.renderPage(); break;
-      case 'plans':     if (window.Plans) Plans.renderPage(); break;
       case 'stats':     if (window.Stats) Stats.renderPage(); break;
       case 'settings':  if (window.Settings) Settings.renderPage(); break;
       case 'training':  if (window.Training) Training.renderPage(); break;
