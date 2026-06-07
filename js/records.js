@@ -197,14 +197,14 @@ Records.renderStats = function(container, opts = {}) {
   } else {
     html += '<div style="font-weight:600;margin:16px 0 8px">训练记录</div>';
     records.slice(0, 50).forEach(r => {
-      const exNames = (r.exercisesCompleted || []).map(ec => ec.name).join(', ');
+      const exNames = (r.exercisesCompleted || []).map((ec, i) => `#${i+1} ${Esc.html(ec.name)}`).join(' · ');
       html += `<div class="card" style="font-size:0.85rem;cursor:pointer" onclick="Records._toggleDetail('${r.id}')">
         <div style="display:flex;justify-content:space-between">
           <span>${UI.formatDate(r.date)}</span>
           <span style="color:var(--text-secondary)">${Esc.html(r.planName)}</span>
         </div>
         <div style="margin-top:4px;color:var(--text-secondary)">体重 ${r.weight}kg · ${UI.formatDuration(r.totalDuration || 0)}</div>
-        <div style="margin-top:2px;color:var(--text-secondary)">${Esc.html(exNames)}</div>
+        <div style="margin-top:2px;color:var(--text-secondary)">${exNames}</div>
         <div id="record-detail-${r.id}" class="hidden" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
       </div>`;
     });
