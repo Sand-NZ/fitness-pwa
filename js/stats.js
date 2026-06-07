@@ -129,24 +129,41 @@ Stats.renderPage = function() {
   container.innerHTML = html;
 };
 
+// 辅助：获取动作的字段定义
+Stats._getFieldsFor = function(ec) {
+  let ex = null;
+  if (ec.exerciseId) ex = Exercises.getById(ec.exerciseId);
+  if (!ex) ex = Exercises.getAll().find(e => e.name === ec.name);
+  return ex ? ex.fields : [];
+};
+
+// 辅助：按字段顺序渲染一组值（含单位）
+Stats._renderSetValues = function(s, fields) {
+  if (!fields || !fields.length) {
+    return Object.values(s).filter(v => v != null && v !== '').join(' · ');
+  }
+  return fields.map(f => {
+    const val = s[f.key];
+    if (val == null || val === '') return null;
+    return `${val}${f.unit || ''}`;
+  }).filter(Boolean).join(' · ');
+};
+
 // ---------- 记录详情 ----------
 Stats._toggleDetail = function(id) {
   const detail = document.getElementById('stats-record-detail-' + id);
   if (!detail) return;
-  if (!detail.classList.contains('hidden')) {
-    detail.classList.add('hidden');
-    return;
-  }
+  if (!detail.classList.contains('hidden')) { detail.classList.add('hidden'); return; }
   const r = Records.getById(id);
   if (!r) return;
 
   let html = '';
-  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+  (r.exercisesCompleted || []).forEach(ec => {
+    const fields = this._getFieldsFor(ec);
     html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
-    (ec.sets || []).forEach((s, setIdx) => {
-      // 按顺序列出所有字段值（不显示字段名）
-      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
-      html += `<div style="padding:2px 0;font-size:0.8rem">组 ${setIdx+1}: ${Esc.html(String(vals))}</div>`;
+    (ec.sets || []).forEach((s, i) => {
+      const vals = this._renderSetValues(s, fields);
+      html += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${Esc.html(String(vals))}</div>`;
     });
   });
   if (r.note) html += `<div style="margin-top:4px;font-size:0.8rem;color:var(--text-secondary)">💬 ${Esc.html(r.note)}</div>`;
@@ -155,7 +172,7 @@ Stats._toggleDetail = function(id) {
   detail.classList.remove('hidden');
 };
 
-// ---------- 编辑记录 ----------
+// ---------- 编辑记录（每个字段独立输入 + 补组） ----------
 Stats.editRecord = function(id) {
   const r = Records.getById(id);
   if (!r) return;
@@ -175,16 +192,27 @@ Stats.editRecord = function(id) {
         <textarea class="form-textarea" name="note" placeholder="训练感受">${Esc.html(r.note || '')}</textarea>
       </div>`;
 
-  // 每组数据也可编辑
   (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+    const fields = this._getFieldsFor(ec);
+    const keys = fields.length ? fields : Object.keys(ec.sets?.[0] || {}).map(k => ({key:k,label:k,unit:''}));
     html += `<div class="form-section"><div class="form-section-title">${Esc.html(ec.name)}</div>`;
+    html += `<div class="existing-sets">`;
     (ec.sets || []).forEach((s, setIdx) => {
-      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
-      html += `<div class="form-group">
-        <label class="form-label" style="font-size:0.8rem">组 ${setIdx+1}</label>
-        <input type="text" class="form-input" name="set-${exIdx}-${setIdx}" value="${Esc.html(vals)}" placeholder="用空格分隔各值">
-      </div>`;
+      html += `<div class="set-row" style="display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap">`;
+      html += `<span style="font-size:0.75rem;color:var(--text-secondary);min-width:28px">${setIdx+1}</span>`;
+      keys.forEach(f => {
+        const val = s[f.key] ?? '';
+        html += `<input type="text" class="form-input" style="width:64px;flex:1;min-width:48px" name="s-${exIdx}-${setIdx}-${f.key}" value="${Esc.html(String(val))}"><span style="font-size:0.65rem;color:var(--text-secondary);margin-right:2px">${Esc.html(f.unit)}</span>`;
+      });
+      html += `</div>`;
     });
+    html += `</div>`;
+    // 补组按钮
+    html += `<button type="button" class="btn btn-secondary btn-sm" onclick="
+      var container=this.previousElementSibling;
+      var tpl=container.querySelector('.set-row');
+      if(tpl){var c=tpl.cloneNode(true);c.querySelectorAll('input').forEach(function(i){i.value='';i.name=i.name.replace(/s-\\d+-\\d+/,'s-'+${exIdx}+'-'+(container.children.length))});container.appendChild(c)}
+    " style="margin-top:4px">+ 补一组</button>`;
     html += `</div>`;
   });
 
@@ -207,20 +235,24 @@ Stats._saveEdit = function(id) {
     note: fd.get('note') || ''
   };
 
-  // 更新每组数据（如果提供了修改）
-  r.exercisesCompleted.forEach((ec, exIdx) => {
-    (ec.sets || []).forEach((s, setIdx) => {
-      const raw = fd.get(`set-${exIdx}-${setIdx}`);
-      if (raw && raw.trim()) {
-        const vals = raw.trim().split(/[\s·,，]+/);
-        const keys = Object.keys(s);
-        keys.forEach((k, i) => {
-          if (vals[i] !== undefined) s[k] = vals[i];
-        });
-      }
-    });
+  // 按 exIdx 分组重构 sets
+  const newCompleted = [];
+  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+    const fields = this._getFieldsFor(ec);
+    const keys = fields.length ? fields.map(f => f.key) : Object.keys(ec.sets?.[0] || {});
+    const sets = [];
+    for (let si = 0; ; si++) {
+      const firstKey = keys[0];
+      if (!firstKey) break;
+      const val = fd.get(`s-${exIdx}-${si}-${firstKey}`);
+      if (val === null || val === undefined) break;
+      const set = {};
+      keys.forEach(k => { const v = fd.get(`s-${exIdx}-${si}-${k}`); if (v != null) set[k] = v; });
+      if (Object.keys(set).length) sets.push(set);
+    }
+    if (sets.length) newCompleted.push({ ...ec, sets });
   });
-  updates.exercisesCompleted = r.exercisesCompleted;
+  if (newCompleted.length) updates.exercisesCompleted = newCompleted;
 
   Records.update(id, updates);
   App.closeModal();

@@ -219,18 +219,21 @@ Records.renderStats = function(container, opts = {}) {
 Records._toggleDetail = function(id) {
   const detail = document.getElementById('record-detail-' + id);
   if (!detail) return;
-  if (!detail.classList.contains('hidden')) {
-    detail.classList.add('hidden');
-    return;
-  }
+  if (!detail.classList.contains('hidden')) { detail.classList.add('hidden'); return; }
   const r = this.getById(id);
   if (!r) return;
 
   let html = '';
   (r.exercisesCompleted || []).forEach(ec => {
+    // 查找字段定义
+    let fields = [];
+    if (ec.exerciseId) { const ex = Exercises.getById(ec.exerciseId); if (ex) fields = ex.fields; }
+    if (!fields.length) { const ex = Exercises.getAll().find(e => e.name === ec.name); if (ex) fields = ex.fields; }
     html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
     (ec.sets || []).forEach((s, i) => {
-      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
+      const vals = fields.length
+        ? fields.map(f => { const v = s[f.key]; return v != null && v !== '' ? `${v}${f.unit || ''}` : null; }).filter(Boolean).join(' · ')
+        : Object.values(s).filter(v => v != null && v !== '').join(' · ');
       html += `<div style="padding:2px 0">组 ${i+1}: ${Esc.html(String(vals))}</div>`;
     });
   });
