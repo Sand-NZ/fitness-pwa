@@ -261,16 +261,11 @@ Training.showEndModal = function() {
   const defaultWeight = settings.autoDefaultWeight || '';
 
   const html = `<h2>🏁 训练结束</h2>
-    <p style="margin-bottom:16px;color:var(--text-secondary)">请填写本次训练总结</p>
+    <p style="margin-bottom:16px;color:var(--text-secondary)">请填写体重</p>
     <form id="end-training-form" onsubmit="return false">
       <div class="form-group">
         <label class="form-label">体重 (kg) *</label>
         <input type="number" class="form-input" name="weight" value="${defaultWeight}" placeholder="例如：75" step="0.1" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">RPE (1-10) *</label>
-        <input type="range" name="rpe" min="1" max="10" value="5" oninput="this.nextElementSibling.textContent=this.value">
-        <span style="font-size:1.2rem;font-weight:700;color:var(--accent)">5</span>
       </div>
       <div class="form-group">
         <label class="form-label">备注</label>
@@ -287,16 +282,12 @@ Training.showEndModal = function() {
 
 Training._saveAndEnd = function() {
   const settings = STORAGE.get(STORAGE.keys.settings) || defaultSettings();
-  // 读取结束弹窗表单（如果存在）
   const form = document.getElementById('end-training-form');
   let weight = settings.autoDefaultWeight || 0;
-  let rpe = 5;
   let note = '';
   if (form) {
     const w = parseFloat(form.querySelector('[name="weight"]')?.value);
     if (w && w > 0) weight = w;
-    const r = parseInt(form.querySelector('[name="rpe"]')?.value);
-    if (r >= 1 && r <= 10) rpe = r;
     note = form.querySelector('[name="note"]')?.value || '';
   }
 
@@ -329,10 +320,9 @@ Training._saveAndEnd = function() {
 
   const record = newRecord({
     planName: this.mode === 'plan' ? (Plans.getById(this.planId)?.name || '计划训练') : '自由训练',
-    mode: this.mode, // BUG 11: 存储模式以便统计筛选
+    mode: this.mode,
     totalDuration,
     weight,
-    rpe,
     note,
     exercisesCompleted
   });
@@ -478,7 +468,7 @@ Training._renderActive = function() {
     return html;
   }
 
-  // 动作名 + 组数
+  // 动作名 + 组数 + 换动作按钮（显眼）
   html += `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
@@ -486,7 +476,7 @@ Training._renderActive = function() {
         <div style="font-size:0.8rem;color:var(--text-secondary)">第 ${this.currentSet + 1} 组</div>
       </div>
       <div style="display:flex;gap:4px">
-        ${this.mode === 'free' ? `<button class="btn btn-ghost btn-sm" onclick="Training._switchExercise()" style="color:var(--accent)">🔄 换动作</button>` : ''}
+        ${this.mode === 'free' ? `<button class="btn btn-primary btn-sm" onclick="Training._switchExercise()" style="font-size:0.85rem;padding:8px 14px">🔄 换动作</button>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="Training.skipExercise()" style="color:var(--text-secondary)">⏭ 跳过</button>
       </div>
     </div>`;
@@ -499,14 +489,17 @@ Training._renderActive = function() {
 
   html += '</div>'; // end card
 
-  // 字段输入面板
+  // 字段输入面板（预填上一组的值）
   html += `<div class="card">
     <div style="font-weight:600;margin-bottom:12px">📝 记录本组数据</div>
     <form id="set-form" onsubmit="return false">`;
 
+  const lastSet = this.setData.length > 0 ? this.setData[this.setData.length - 1] : null;
   (ex.fields || []).forEach(f => {
     let defaultValue = null;
     if (f.key === 'weight' && this._lastWeight != null) defaultValue = this._lastWeight;
+    // 预填上一组的值
+    if (lastSet && lastSet[f.key] != null) defaultValue = lastSet[f.key];
     html += Exercises.renderFieldInput(f, defaultValue);
   });
 
