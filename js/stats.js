@@ -160,7 +160,7 @@ Stats._toggleDetail = function(id) {
   let html = '';
   (r.exercisesCompleted || []).forEach(ec => {
     const fields = this._getFieldsFor(ec);
-    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
+    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong> <span style="font-weight:400;color:var(--text-secondary);font-size:0.75rem">#${exIdx+1}</span></div>`;
     (ec.sets || []).forEach((s, i) => {
       const vals = this._renderSetValues(s, fields);
       html += `<div style="padding:2px 0;font-size:0.8rem">组 ${i+1}: ${Esc.html(String(vals))}</div>`;
@@ -190,7 +190,7 @@ Stats.editRecord = function(id) {
   (r.exercisesCompleted || []).forEach((ec, exIdx) => {
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields : Object.keys(ec.sets?.[0] || {}).map(k => ({key:k,label:k,unit:''}));
-    html += `<div class="form-section"><div class="form-section-title">${Esc.html(ec.name)}</div>`;
+    html += `<div class="form-section"><div class="form-section-title">${Esc.html(ec.name)} <span style="font-weight:400;font-size:0.75rem">#${exIdx+1}</span></div>`;
     html += `<div class="existing-sets">`;
     (ec.sets || []).forEach((s, setIdx) => {
       html += `<div class="set-row" style="display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap">`;
@@ -199,6 +199,7 @@ Stats.editRecord = function(id) {
         const val = s[f.key] ?? '';
         html += `<input type="text" class="form-input" style="width:64px;flex:1;min-width:48px" name="s-${exIdx}-${setIdx}-${f.key}" value="${Esc.html(String(val))}"><span style="font-size:0.65rem;color:var(--text-secondary);margin-right:2px">${Esc.html(f.unit)}</span>`;
       });
+      html += `<button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.set-row').remove()" style="color:var(--danger);font-size:0.7rem;padding:2px 6px">✕</button>`;
       html += `</div>`;
     });
     html += `</div>`;

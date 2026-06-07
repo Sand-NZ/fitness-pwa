@@ -226,7 +226,7 @@ Records._toggleDetail = function(id) {
     let fields = [];
     if (ec.exerciseId) { const ex = Exercises.getById(ec.exerciseId); if (ex) fields = ex.fields; }
     if (!fields.length) { const ex = Exercises.getAll().find(e => e.name === ec.name); if (ex) fields = ex.fields; }
-    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
+    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong> <span style="font-weight:400;color:var(--text-secondary);font-size:0.75rem">#${exIdx+1}</span></div>`;
     (ec.sets || []).forEach((s, i) => {
       const vals = fields.length
         ? fields.map(f => { const v = s[f.key]; return v != null && v !== '' ? `${v}${f.unit || ''}` : null; }).filter(Boolean).join(' · ')

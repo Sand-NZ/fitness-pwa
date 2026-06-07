@@ -8,17 +8,19 @@ const Timer = {
   paused: false,
   intervalId: null,
   onTick: null,
-  _startTime: 0
+  _startTime: 0,
+  _displayEl: null
 };
 
 Timer.init = function(opts = {}) {
   this.elapsed = 0;
   this.running = false;
   this.paused = false;
+  this._displayEl = null;
   this.onTick = opts.onTick || function(s, fmt) {
-    const el = document.getElementById('timer-display');
-    if (el) el.textContent = fmt;
-  };
+    if (!this._displayEl) this._displayEl = document.getElementById('timer-display');
+    if (this._displayEl) this._displayEl.textContent = fmt;
+  }.bind(this);
 };
 
 Timer.start = function() {

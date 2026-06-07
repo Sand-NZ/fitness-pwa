@@ -414,6 +414,8 @@ Training.renderPage = function() {
   }
 
   container.innerHTML = this._renderActive();
+  // 重置计时器 DOM 引用（innerHTML 后旧引用失效）
+  if (window.Timer) Timer._displayEl = document.getElementById('timer-display');
 };
 
 Training._renderInactive = function() {
