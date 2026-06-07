@@ -468,7 +468,7 @@ Training._renderActive = function() {
     return html;
   }
 
-  // 动作名 + 组数（换动作按钮在名称下方）
+  // 动作名 + 组数
   html += `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
@@ -478,8 +478,7 @@ Training._renderActive = function() {
       <div>
         <button class="btn btn-ghost btn-sm" onclick="Training.skipExercise()" style="color:var(--text-secondary)">⏭ 跳过</button>
       </div>
-    </div>
-    ${this.mode === 'free' ? `<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="Training._switchExercise()" style="font-size:0.85rem;width:100%">🔄 换动作</button></div>` : ''}`;
+    </div>`;
 
   // 计时器（总用时）
   html += `<div style="text-align:center;padding:8px 0">
@@ -504,6 +503,7 @@ Training._renderActive = function() {
   });
 
   html += `<button type="button" class="btn btn-primary btn-lg" onclick="Training._submitSet()" style="width:100%;margin-top:8px">✅ 记录本组</button>
+    ${this.mode === 'free' ? `<button type="button" class="btn btn-primary btn-lg" onclick="Training._switchExercise()" style="width:100%;margin-top:8px">🔄 换动作</button>` : ''}
     </form>
   </div>`;
 
