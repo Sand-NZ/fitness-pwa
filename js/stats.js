@@ -199,14 +199,14 @@ Stats.editRecord = function(id) {
   (r.exercisesCompleted || []).forEach((ec, exIdx) => {
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields : Object.keys(ec.sets?.[0] || {}).map(k => ({key:k,label:k,unit:''}));
-    const total = (r.exercisesCompleted || []).length;
     html += `<div class="form-section exercise-block" data-orig-idx="${exIdx}">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="form-section-title">${Esc.html(ec.name)} <span style="font-weight:400;font-size:0.75rem">#${exIdx+1}</span></div>
-        <div style="display:flex;gap:4px">
-          ${exIdx > 0 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var s=this.closest('.exercise-block');var p=s.parentElement;var prev=s.previousElementSibling;if(prev&&prev.classList.contains('exercise-block')){p.insertBefore(s,prev)}" style="font-size:0.8rem">↑</button>` : ''}
-          ${exIdx < total - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var s=this.closest('.exercise-block');var n=s.nextElementSibling;if(n&&n.classList.contains('exercise-block')){s.parentElement.insertBefore(n,s)}" style="font-size:0.8rem">↓</button>` : ''}
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:0.75rem;color:var(--text-secondary)">#</span>
+          <input type="number" class="form-input" style="width:48px" name="order-${exIdx}" value="${exIdx+1}" min="1" max="${r.exercisesCompleted.length}">
+          <span class="form-section-title">${Esc.html(ec.name)}</span>
         </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.exercise-block').remove()" style="color:var(--danger);font-size:0.75rem">🗑️ 删除动作</button>
       </div>`;
     html += `<div class="existing-sets">`;
     (ec.sets || []).forEach((s, setIdx) => {
@@ -247,17 +247,17 @@ Stats._saveEdit = function(id) {
     note: fd.get('note') || ''
   };
 
-  // 按 DOM 视觉顺序（而非原 exIdx）重构 exercisesCompleted
+  // 按 order 排序重构 exercisesCompleted
   const blocks = form.querySelectorAll('.exercise-block');
-  const newCompleted = [];
+  const collected = [];
   blocks.forEach(block => {
     const origIdx = parseInt(block.dataset.origIdx);
     const ec = r.exercisesCompleted[origIdx];
     if (!ec) return;
+    const order = parseInt(block.querySelector('[name^="order-"]')?.value) || 1;
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields.map(f => f.key) : Object.keys(ec.sets?.[0] || {});
     const sets = [];
-    // 读取此 block 下所有组输入
     const setRows = block.querySelectorAll('.set-row');
     setRows.forEach(row => {
       const set = {};
@@ -267,8 +267,11 @@ Stats._saveEdit = function(id) {
       });
       if (Object.keys(set).length) sets.push(set);
     });
-    if (sets.length) newCompleted.push({ ...ec, sets });
+    if (sets.length) collected.push({ order, data: { ...ec, sets } });
   });
+  // 按 order 排序
+  collected.sort((a, b) => a.order - b.order);
+  const newCompleted = collected.map(c => c.data);
   if (newCompleted.length) updates.exercisesCompleted = newCompleted;
 
   Records.update(id, updates);
