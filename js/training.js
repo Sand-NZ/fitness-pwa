@@ -285,15 +285,45 @@ Training._renderActive = function() {
 Training._renderExerciseSelector = function() {
   let html = '<div style="max-width:400px;margin:0 auto"><div style="font-weight:600;margin-bottom:12px">选择动作</div>';
   html += UI.searchBar('搜索动作…', '');
+
   const exercises = Exercises.getAll();
-  if (exercises.length > 0) {
-    html += exercises.map(ex =>
-      `<div class="card" onclick="Training.selectExercise('${ex.id}')" style="cursor:pointer;margin-bottom:8px">
-        <span>${Esc.html(ex.name)}</span>
-        <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:8px">(${(ex.fields||[]).length} 个字段)</span>
-      </div>`
-    ).join('');
+  const categories = {};
+  const catOrder = ['热身','推','拉','腿','核心'];
+  exercises.forEach(ex => {
+    const cat = ex.category || '未分类';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(ex);
+  });
+  const sortedCats = Object.keys(categories).sort((a, b) => {
+    const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1; if (ib >= 0) return 1;
+    return a.localeCompare(b);
+  });
+
+  if (exercises.length === 0) {
+    html += '<div style="color:var(--text-secondary);text-align:center;padding:16px">动作库为空，请先在动作库中添加</div>';
+  } else {
+    sortedCats.forEach(cat => {
+      const items = categories[cat];
+      html += `<div class="card" style="margin-bottom:8px;padding:10px 14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
+          <span style="font-weight:600;font-size:0.9rem">${Esc.html(cat)} <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem">(${items.length})</span></span>
+          <span style="color:var(--text-secondary)">▾</span>
+        </div>
+        <div style="margin-top:6px">`;
+      items.forEach(ex => {
+        html += `<div class="list-item" style="cursor:pointer;padding:8px 0" onclick="Training.selectExercise('${ex.id}')">
+          <div class="list-item-content">
+            <div class="list-item-title" style="font-size:0.9rem">${Esc.html(ex.name)}</div>
+            <div class="list-item-desc" style="font-size:0.75rem">${(ex.fields||[]).length} 字段</div>
+          </div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
   }
+
   html += `<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px">
     <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">或直接输入动作名称：</div>
     <div style="display:flex;gap:8px">
@@ -302,6 +332,23 @@ Training._renderExerciseSelector = function() {
     </div>
   </div>`;
   html += '<div style="margin-top:16px"><button class="btn btn-secondary" onclick="Training._cancelTraining()" style="width:100%">取消训练</button></div></div>';
+
+  // 绑定搜索
+  setTimeout(() => {
+    const input = document.querySelector('#training-content .search-input');
+    if (input) {
+      input.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        document.querySelectorAll('#training-content .card').forEach(card => {
+          if (card.querySelector('[onclick^="Training.selectExercise"]')) {
+            const name = card.querySelector('.list-item-title')?.textContent?.toLowerCase() || '';
+            card.style.display = name.includes(q) ? 'block' : 'none';
+          }
+        });
+      });
+    }
+  }, 0);
+
   return html;
 };
 
