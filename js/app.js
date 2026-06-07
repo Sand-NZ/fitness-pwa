@@ -120,7 +120,7 @@ const SE = [
 ];
 
 function seedDefaultData() {
-  const SEED_VER = 6;
+  const SEED_VER = 7;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
@@ -145,22 +145,22 @@ function seedDefaultData() {
   });
   if (exChanged) STORAGE.set(STORAGE.keys.exercises, allExercises);
 
-  // v6: 重分类：推→胸/肩, 拉→背/肩
-  const catMap = {
-    '推': null, // 按具体动作名分配
-    '拉': null
-  };
-  const exCatMap = {
+  // v7: 彻底清除推/拉分类 + 腹部→腹部/核心
+  const allExercisesV7 = STORAGE.get(STORAGE.keys.exercises) || [];
+  let exChangedV7 = false;
+  const exCatMapV7 = {
     '杠铃卧推':'胸','哑铃卧推':'胸','双杠臂屈伸（助力）':'胸','上斜哑铃卧推':'胸','蝴蝶机夹胸':'胸','器械直臂下压':'胸',
     '反向飞鸟':'肩','俯身哑铃后束飞鸟':'肩','面拉':'肩','哑铃推肩':'肩',
     '助力引体向上':'背','高位下拉':'背','T杆划船':'背','钢索划船':'背','单臂哑铃划船':'背','静态悬挂':'背'
   };
-  allExercises.forEach(e => {
-    if (exCatMap[e.name] && e.category !== exCatMap[e.name]) {
-      e.category = exCatMap[e.name]; exChanged = true;
+  allExercisesV7.forEach(e => {
+    if (e.category === '推' || e.category === '拉' || exCatMapV7[e.name]) {
+      const newCat = exCatMapV7[e.name];
+      if (newCat && e.category !== newCat) { e.category = newCat; exChangedV7 = true; }
     }
+    if (e.category === '腹部' || e.category === '腹部 ') { e.category = '腹部/核心'; exChangedV7 = true; }
   });
-  if (exChanged) STORAGE.set(STORAGE.keys.exercises, allExercises);
+  if (exChangedV7) STORAGE.set(STORAGE.keys.exercises, allExercisesV7);
 
   // 构造动作: SE = [name, category, rest, note, fieldIdx], F[fieldIdx] = fields
   const exMap = {};
