@@ -108,14 +108,12 @@ Records.getStats = function(records) {
 
   let totalSets = 0;
   let totalVolume = 0;
-  const rpes = [];
   const weights = [];
   const weightTrend = [];
   const byDate = {};
 
   list.forEach(r => {
     if (r.weight) weights.push(r.weight);
-    if (r.rpe) rpes.push(r.rpe);
 
     const dateKey = r.date.slice(0, 10);
     if (!byDate[dateKey]) byDate[dateKey] = { sessions: 0, sets: 0, volume: 0, duration: 0 };
@@ -144,7 +142,6 @@ Records.getStats = function(records) {
     totalDuration: list.reduce((s, r) => s + (r.totalDuration || 0), 0),
     totalSets,
     totalVolume,
-    avgRpe: rpes.length ? (rpes.reduce((s, v) => s + v, 0) / rpes.length) : 0,
     avgWeight: weights.length ? (weights.reduce((s, v) => s + v, 0) / weights.length) : 0,
     weightTrend,
     byDate
@@ -154,11 +151,11 @@ Records.getStats = function(records) {
 // ---------- 导出 CSV ----------
 Records.exportCSV = function(records) {
   const list = records || this.getAll();
-  let csv = '日期,计划,用时(秒),体重(kg),RPE,备注\n';
+  let csv = '日期,计划,用时(秒),体重(kg),备注\n';
   list.forEach(r => {
     const date = r.date.slice(0, 19).replace('T', ' ');
     const note = (r.note || '').replace(/,/g, '，');
-    csv += `${date},${r.planName},${r.totalDuration || 0},${r.weight || 0},${r.rpe || 0},${note}\n`;
+    csv += `${date},${r.planName},${r.totalDuration || 0},${r.weight || 0},${note}\n`;
 
     // 各组详情
     (r.exercisesCompleted || []).forEach(ec => {
@@ -184,8 +181,8 @@ Records.renderStats = function(container, opts = {}) {
     { label: '总组数', value: stats.totalSets },
     { label: '总时长', value: UI.formatDuration(stats.totalDuration) },
     { label: '总容量', value: (stats.totalVolume / 1000).toFixed(1) + 'k' },
-    { label: '平均 RPE', value: stats.avgRpe.toFixed(1) },
-    { label: '平均体重', value: stats.avgWeight.toFixed(1) + 'kg' }
+    { label: '平均体重', value: stats.avgWeight.toFixed(1) + 'kg' },
+    { label: '总动作', value: stats.totalSessions }
   ];
 
   cards.forEach(c => {
@@ -206,7 +203,7 @@ Records.renderStats = function(container, opts = {}) {
           <span>${UI.formatDate(r.date)}</span>
           <span style="color:var(--text-secondary)">${Esc.html(r.planName)}</span>
         </div>
-        <div style="margin-top:4px;color:var(--text-secondary)">体重 ${r.weight}kg · RPE ${r.rpe}</div>
+        <div style="margin-top:4px;color:var(--text-secondary)">体重 ${r.weight}kg · ${UI.formatDuration(r.totalDuration || 0)}</div>
         <div style="margin-top:2px;color:var(--text-secondary)">${Esc.html(exNames)}</div>
         <div id="record-detail-${r.id}" class="hidden" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
       </div>`;

@@ -67,8 +67,8 @@ Stats.renderPage = function() {
     <div class="stat-card"><div class="stat-value">${stats.totalSets}</div><div class="stat-label">总组数</div></div>
     <div class="stat-card"><div class="stat-value">${UI.formatDuration(stats.totalDuration)}</div><div class="stat-label">总时长</div></div>
     <div class="stat-card"><div class="stat-value">${(stats.totalVolume / 1000).toFixed(1)}k</div><div class="stat-label">总容量</div></div>
-    <div class="stat-card"><div class="stat-value">${stats.avgRpe.toFixed(1)}</div><div class="stat-label">平均 RPE</div></div>
     <div class="stat-card"><div class="stat-value">${stats.avgWeight.toFixed(1)}</div><div class="stat-label">平均体重</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.totalSessions}</div><div class="stat-label">总动作</div></div>
   </div>`;
 
   // ====== 简单图表（用 div 条代替） ======
@@ -111,7 +111,7 @@ Stats.renderPage = function() {
           <span>${UI.formatDate(r.date)}</span>
           <span style="color:var(--text-secondary)">${Esc.html(r.planName)}</span>
         </div>
-        <div style="margin-top:2px;color:var(--text-secondary)">体重 ${r.weight}kg · RPE ${r.rpe} · ${UI.formatDuration(r.totalDuration || 0)}</div>
+        <div style="margin-top:2px;color:var(--text-secondary)">体重 ${r.weight}kg · ${UI.formatDuration(r.totalDuration || 0)}</div>
         <div style="font-size:0.8rem;color:var(--text-secondary)">${Esc.html(exNames)}</div>
         <div id="stats-record-detail-${r.id}" class="hidden" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"></div>
         <div style="margin-top:6px;text-align:right">
@@ -183,11 +183,6 @@ Stats.editRecord = function(id) {
         <input type="number" class="form-input" name="weight" value="${r.weight || 0}" step="0.1">
       </div>
       <div class="form-group">
-        <label class="form-label">RPE (1-10)</label>
-        <input type="range" class="form-input" name="rpe" min="1" max="10" value="${r.rpe || 5}" oninput="this.nextElementSibling.textContent=this.value">
-        <span style="font-size:1.2rem;font-weight:700;color:var(--accent)">${r.rpe || 5}</span>
-      </div>
-      <div class="form-group">
         <label class="form-label">备注</label>
         <textarea class="form-textarea" name="note" placeholder="训练感受">${Esc.html(r.note || '')}</textarea>
       </div>`;
@@ -231,7 +226,6 @@ Stats._saveEdit = function(id) {
   const fd = new FormData(form);
   const updates = {
     weight: parseFloat(fd.get('weight')) || 0,
-    rpe: parseInt(fd.get('rpe')) || 5,
     note: fd.get('note') || ''
   };
 

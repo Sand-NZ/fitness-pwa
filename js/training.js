@@ -468,18 +468,18 @@ Training._renderActive = function() {
     return html;
   }
 
-  // 动作名 + 组数 + 换动作按钮（显眼）
+  // 动作名 + 组数（换动作按钮在名称下方）
   html += `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
         <div style="font-size:1.2rem;font-weight:700">${Esc.html(ex.name)}</div>
         <div style="font-size:0.8rem;color:var(--text-secondary)">第 ${this.currentSet + 1} 组</div>
       </div>
-      <div style="display:flex;gap:4px">
-        ${this.mode === 'free' ? `<button class="btn btn-primary btn-sm" onclick="Training._switchExercise()" style="font-size:0.85rem;padding:8px 14px">🔄 换动作</button>` : ''}
+      <div>
         <button class="btn btn-ghost btn-sm" onclick="Training.skipExercise()" style="color:var(--text-secondary)">⏭ 跳过</button>
       </div>
-    </div>`;
+    </div>
+    ${this.mode === 'free' ? `<div style="margin-top:8px"><button class="btn btn-primary btn-sm" onclick="Training._switchExercise()" style="font-size:0.85rem;width:100%">🔄 换动作</button></div>` : ''}`;
 
   // 计时器（总用时）
   html += `<div style="text-align:center;padding:8px 0">

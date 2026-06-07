@@ -120,11 +120,22 @@ const SEED_PLANS = [
 ];
 
 function seedDefaultData() {
-  const SEED_VER = 3;
+  const SEED_VER = 4;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
   localStorage.removeItem('fitness_pending_training');
+
+  // v4: 清理旧记录中的 rpe 字段
+  const allRecords = STORAGE.get(STORAGE.keys.records) || [];
+  let recordsChanged = false;
+  allRecords.forEach(r => {
+    if (r.rpe !== undefined || r.avgRpe !== undefined) {
+      delete r.rpe; delete r.avgRpe;
+      recordsChanged = true;
+    }
+  });
+  if (recordsChanged) STORAGE.set(STORAGE.keys.records, allRecords);
 
   // 构造动作: SE = [name, category, rest, note, fieldIdx], F[fieldIdx] = fields
   const exMap = {};
