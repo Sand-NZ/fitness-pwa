@@ -113,11 +113,20 @@ Training._switchExercise = function() {
     });
   }
   this.currentExercise = null; this.setData = []; this.currentSet = 0;
-  Timer.stop(); this.renderPage();
+  this.renderPage();
 };
 
 // ---------- 跳过动作 ----------
 Training.skipExercise = function() {
+  // 如果有已记录的组，保存后再跳过
+  if (this.currentExercise && this.setData.length > 0) {
+    if (!this._completedExercises) this._completedExercises = [];
+    this._completedExercises.push({
+      exerciseId: this.currentExercise.id, name: this.currentExercise.name,
+      tags: this.currentExercise.tags || [], sets: this.setData.map(s => ({ ...s })),
+      restDuration: this.currentExercise.defaultRest || 90
+    });
+  }
   this.currentExercise = null; this.setData = []; this.currentSet = 0; this.renderPage();
 };
 

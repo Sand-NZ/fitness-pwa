@@ -31,9 +31,8 @@ Stats.renderPage = function() {
       <button class="btn btn-sm ${this.filter.preset === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setPreset('all')">全部</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-      <button class="btn btn-sm ${this.filter.mode === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setMode('all')">全部模式</button>
+      <button class="btn btn-sm ${this.filter.mode === 'all' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setMode('all')">全部</button>
       <button class="btn btn-sm ${this.filter.mode === 'free' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setMode('free')">自由训练</button>
-      <button class="btn btn-sm ${this.filter.mode === 'plan' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setMode('plan')">计划训练</button>
     </div>`;
 
   // 标签筛选
