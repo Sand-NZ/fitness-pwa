@@ -297,7 +297,7 @@ Training._renderExerciseSelector = function() {
 
   const exercises = Exercises.getAll();
   const categories = {};
-  const catOrder = ['热身','推','拉','腿','腹部/核心'];
+  const catOrder = ['胸','肩','背','腿','腹部/核心','手臂','热身'];
   exercises.forEach(ex => {
     const cat = ex.category || '未分类';
     if (!categories[cat]) categories[cat] = [];
@@ -320,7 +320,7 @@ Training._renderExerciseSelector = function() {
           <span style="font-weight:600;font-size:0.9rem">${Esc.html(cat)} <span style="font-weight:400;color:var(--text-secondary);font-size:0.8rem">(${items.length})</span></span>
           <span style="color:var(--text-secondary)">▾</span>
         </div>
-        <div style="margin-top:6px">`;
+        <div class="hidden" style="margin-top:6px">`;
       items.forEach(ex => {
         html += `<div class="list-item" style="cursor:pointer;padding:8px 0" onclick="Training.selectExercise('${ex.id}')">
           <div class="list-item-content">

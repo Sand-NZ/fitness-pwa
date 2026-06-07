@@ -229,7 +229,7 @@ Exercises.renderPage = function() {
   });
 
   // 按分类顺序排列
-  const catOrder = ['热身', '推', '拉', '腿', '腹部/核心'];
+  const catOrder = ['胸','肩','背','腿','腹部/核心','手臂','热身'];
   const sortedCats = Object.keys(categories).sort((a, b) => {
     const ia = catOrder.indexOf(a); const ib = catOrder.indexOf(b);
     if (ia >= 0 && ib >= 0) return ia - ib;
@@ -248,7 +248,7 @@ Exercises.renderPage = function() {
           <span style="font-weight:600;font-size:0.95rem">${Esc.html(cat)} <span style="font-weight:400;color:var(--text-secondary)">(${exercises.length})</span></span>
           <span style="color:var(--text-secondary)">▾</span>
         </div>
-        <div style="margin-top:8px">`;
+        <div class="hidden" style="margin-top:8px">`;
       exercises.forEach(ex => {
         const lastUsed = this.getLastUsed(ex.id, ex.name);
         const lastUsedText = lastUsed ? `<span style="font-size:0.7rem;color:var(--text-secondary)">上次: ${UI.formatShortDate(lastUsed)}</span>` : '';
