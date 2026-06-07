@@ -74,7 +74,7 @@ Stats.renderPage = function() {
     <div class="stat-card"><div class="stat-value">${UI.formatDuration(stats.totalDuration)}</div><div class="stat-label">总时长</div></div>
     <div class="stat-card"><div class="stat-value">${(stats.totalVolume / 1000).toFixed(1)}k</div><div class="stat-label">总容量</div></div>
     <div class="stat-card"><div class="stat-value">${stats.avgWeight.toFixed(1)}</div><div class="stat-label">平均体重</div></div>
-    <div class="stat-card"><div class="stat-value">${stats.totalSessions}</div><div class="stat-label">总动作</div></div>
+    <div class="stat-card"><div class="stat-value">${stats.totalExercises || 0}</div><div class="stat-label">总动作</div></div>
   </div>`;
 
   // ====== 简单图表（用 div 条代替） ======

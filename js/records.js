@@ -142,6 +142,7 @@ Records.getStats = function(records) {
     totalDuration: list.reduce((s, r) => s + (r.totalDuration || 0), 0),
     totalSets,
     totalVolume,
+    totalExercises: list.reduce((s, r) => s + (r.exercisesCompleted || []).length, 0),
     avgWeight: weights.length ? (weights.reduce((s, v) => s + v, 0) / weights.length) : 0,
     weightTrend,
     byDate
@@ -182,7 +183,7 @@ Records.renderStats = function(container, opts = {}) {
     { label: '总时长', value: UI.formatDuration(stats.totalDuration) },
     { label: '总容量', value: (stats.totalVolume / 1000).toFixed(1) + 'k' },
     { label: '平均体重', value: stats.avgWeight.toFixed(1) + 'kg' },
-    { label: '总动作', value: stats.totalSessions }
+    { label: '总动作', value: stats.totalExercises || 0 }
   ];
 
   cards.forEach(c => {

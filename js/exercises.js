@@ -313,7 +313,9 @@ Exercises._showForm = function(existing) {
             <option value="推">
             <option value="拉">
             <option value="腿">
+            <option value="肩">
             <option value="腹部/核心">
+            <option value="手臂">
             <option value="有氧">
             <option value="全身">
           </datalist>
