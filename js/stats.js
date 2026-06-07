@@ -199,7 +199,15 @@ Stats.editRecord = function(id) {
   (r.exercisesCompleted || []).forEach((ec, exIdx) => {
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields : Object.keys(ec.sets?.[0] || {}).map(k => ({key:k,label:k,unit:''}));
-    html += `<div class="form-section"><div class="form-section-title">${Esc.html(ec.name)} <span style="font-weight:400;font-size:0.75rem">#${exIdx+1}</span></div>`;
+    const total = (r.exercisesCompleted || []).length;
+    html += `<div class="form-section exercise-block" data-orig-idx="${exIdx}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="form-section-title">${Esc.html(ec.name)} <span style="font-weight:400;font-size:0.75rem">#${exIdx+1}</span></div>
+        <div style="display:flex;gap:4px">
+          ${exIdx > 0 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var s=this.closest('.exercise-block');var p=s.parentElement;var prev=s.previousElementSibling;if(prev&&prev.classList.contains('exercise-block')){p.insertBefore(s,prev)}" style="font-size:0.8rem">↑</button>` : ''}
+          ${exIdx < total - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var s=this.closest('.exercise-block');var n=s.nextElementSibling;if(n&&n.classList.contains('exercise-block')){s.parentElement.insertBefore(n,s)}" style="font-size:0.8rem">↓</button>` : ''}
+        </div>
+      </div>`;
     html += `<div class="existing-sets">`;
     (ec.sets || []).forEach((s, setIdx) => {
       html += `<div class="set-row" style="display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap">`;
@@ -239,21 +247,26 @@ Stats._saveEdit = function(id) {
     note: fd.get('note') || ''
   };
 
-  // 按 exIdx 分组重构 sets
+  // 按 DOM 视觉顺序（而非原 exIdx）重构 exercisesCompleted
+  const blocks = form.querySelectorAll('.exercise-block');
   const newCompleted = [];
-  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+  blocks.forEach(block => {
+    const origIdx = parseInt(block.dataset.origIdx);
+    const ec = r.exercisesCompleted[origIdx];
+    if (!ec) return;
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields.map(f => f.key) : Object.keys(ec.sets?.[0] || {});
     const sets = [];
-    for (let si = 0; ; si++) {
-      const firstKey = keys[0];
-      if (!firstKey) break;
-      const val = fd.get(`s-${exIdx}-${si}-${firstKey}`);
-      if (val === null || val === undefined) break;
+    // 读取此 block 下所有组输入
+    const setRows = block.querySelectorAll('.set-row');
+    setRows.forEach(row => {
       const set = {};
-      keys.forEach(k => { const v = fd.get(`s-${exIdx}-${si}-${k}`); if (v != null) set[k] = v; });
+      keys.forEach(k => {
+        const inp = row.querySelector(`[name$="-${k}"]`);
+        if (inp) set[k] = inp.value;
+      });
       if (Object.keys(set).length) sets.push(set);
-    }
+    });
     if (sets.length) newCompleted.push({ ...ec, sets });
   });
   if (newCompleted.length) updates.exercisesCompleted = newCompleted;
