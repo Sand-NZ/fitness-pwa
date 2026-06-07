@@ -120,7 +120,7 @@ const SE = [
 ];
 
 function seedDefaultData() {
-  const SEED_VER = 7;
+  const SEED_VER = 8;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 

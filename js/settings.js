@@ -117,7 +117,7 @@ Settings.renderPage = function() {
   // ====== 关于 ======
   html += `<div class="card" style="text-align:center;font-size:0.8rem;color:var(--text-secondary)">
     <div style="font-size:1.5rem;margin-bottom:4px">🏋️</div>
-    <div>健身实况记录 <span id="app-version">v0.38</span></div>
+    <div>健身实况记录 <span id="app-version">v0.39</span></div>
     <div>Fitness Logger PWA</div>
     <div style="margin-top:4px">纯前端 · 无后端 · 全部数据存储在本地</div>
   </div>`;
