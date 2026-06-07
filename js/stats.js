@@ -8,7 +8,8 @@ const Stats = {
     tagIds: [],
     startDate: null,
     endDate: null,
-    preset: '30'
+    preset: '30',
+    viewMode: 'card' // 'card' | 'timeline'
   }
 };
 
@@ -42,6 +43,12 @@ Stats.renderPage = function() {
     html += `<span class="tag-filter-item ${active}" style="border-color:${t.color}" onclick="Stats.toggleTag('${t.id}')">${Esc.html(t.name)}</span>`;
   });
   html += '</div></div>';
+
+  // 视图切换
+  html += `<div style="display:flex;gap:6px;margin-bottom:8px">
+    <button class="btn btn-sm ${this.filter.viewMode === 'card' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setView('card')">📋 卡片</button>
+    <button class="btn btn-sm ${this.filter.viewMode === 'timeline' ? 'btn-primary' : 'btn-secondary'}" onclick="Stats.setView('timeline')">📅 时间轴</button>
+  </div>`;
 
   // ====== 计算筛选参数 ======
   const now = new Date();
@@ -103,6 +110,8 @@ Stats.renderPage = function() {
 
   if (records.length === 0) {
     html += UI.emptyState('📊', '暂无训练记录', '');
+  } else if (this.filter.viewMode === 'timeline') {
+    html += this._renderTimeline(records.slice(0, 50));
   } else {
     records.slice(0, 50).forEach(r => {
       const exNames = (r.exercisesCompleted || []).map((ec, i) => `#${i+1} ${Esc.html(ec.name)}`).join(' · ');
@@ -158,7 +167,7 @@ Stats._toggleDetail = function(id) {
   if (!r) return;
 
   let html = '';
-  (r.exercisesCompleted || []).forEach(ec => {
+  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
     const fields = this._getFieldsFor(ec);
     html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong> <span style="font-weight:400;color:var(--text-secondary);font-size:0.75rem">#${exIdx+1}</span></div>`;
     (ec.sets || []).forEach((s, i) => {
@@ -285,6 +294,37 @@ Stats.toggleTag = function(tagId) {
   if (idx >= 0) this.filter.tagIds.splice(idx, 1);
   else this.filter.tagIds.push(tagId);
   this.renderPage();
+};
+
+Stats.setView = function(mode) {
+  this.filter.viewMode = mode;
+  this.renderPage();
+};
+
+// ---------- 时间轴视图 ----------
+Stats._renderTimeline = function(records) {
+  let html = '<div style="position:relative;padding-left:20px">';
+  // 竖线
+  html += '<div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)"></div>';
+
+  records.forEach(r => {
+    const exNames = (r.exercisesCompleted || []).map((ec, i) => `#${i+1} ${Esc.html(ec.name)}`).join(' · ');
+    const dateStr = r.date.slice(0, 10);
+    const timeStr = r.date.slice(11, 16);
+    html += `<div style="position:relative;margin-bottom:14px;padding-left:16px">
+      <div style="position:absolute;left:-16px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)"></div>
+      <div style="font-size:0.75rem;color:var(--text-secondary)">${dateStr} ${timeStr}</div>
+      <div style="font-size:0.85rem;font-weight:500;margin:2px 0">${Esc.html(r.planName)} · 体重 ${r.weight}kg</div>
+      <div style="font-size:0.75rem;color:var(--text-secondary)">${exNames}</div>
+      <div style="margin-top:4px;display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.editRecord('${r.id}')" style="color:var(--accent);font-size:0.7rem">✏️ 编辑</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();Stats.deleteRecord('${r.id}')" style="color:var(--danger);font-size:0.7rem">🗑️ 删除</button>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  return html;
 };
 
 // ---------- 导出 ----------
