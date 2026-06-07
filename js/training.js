@@ -288,7 +288,7 @@ Training._renderExerciseSelector = function() {
 
   const exercises = Exercises.getAll();
   const categories = {};
-  const catOrder = ['热身','推','拉','腿','核心'];
+  const catOrder = ['热身','推','拉','腿','腹部/核心'];
   exercises.forEach(ex => {
     const cat = ex.category || '未分类';
     if (!categories[cat]) categories[cat] = [];

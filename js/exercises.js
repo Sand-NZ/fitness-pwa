@@ -229,7 +229,7 @@ Exercises.renderPage = function() {
   });
 
   // 按分类顺序排列
-  const catOrder = ['热身', '推', '拉', '腿', '核心'];
+  const catOrder = ['热身', '推', '拉', '腿', '腹部/核心'];
   const sortedCats = Object.keys(categories).sort((a, b) => {
     const ia = catOrder.indexOf(a); const ib = catOrder.indexOf(b);
     if (ia >= 0 && ib >= 0) return ia - ib;
@@ -313,8 +313,7 @@ Exercises._showForm = function(existing) {
             <option value="推">
             <option value="拉">
             <option value="腿">
-            <option value="核心">
-            <option value="腹部">
+            <option value="腹部/核心">
             <option value="有氧">
             <option value="全身">
           </datalist>

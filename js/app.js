@@ -109,12 +109,12 @@ const SE = [
   ['保加利亚蹲','腿',120,'主项',4],['罗马尼亚硬拉','腿',120,'辅助',4],
   ['后腿弓步蹲','腿',90,'辅助',4],['山羊挺身','腿',60,'辅助',1],
   ['哥本哈根支撑','腿',60,'辅助',2],
-  ['平板支撑','核心',45,'',2],['锯式俯卧撑','核心',60,'',0],
-  ['卷腹','核心',45,'',1],['仰卧抬腿','核心',45,'',0]
+  ['平板支撑','腹部/核心',45,'',2],['锯式俯卧撑','腹部/核心',60,'',0],
+  ['卷腹','腹部/核心',45,'',1],['仰卧抬腿','腹部/核心',45,'',0]
 ];
 
 function seedDefaultData() {
-  const SEED_VER = 4;
+  const SEED_VER = 5;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
@@ -130,6 +130,14 @@ function seedDefaultData() {
     }
   });
   if (recordsChanged) STORAGE.set(STORAGE.keys.records, allRecords);
+
+  // v5: 将分类 '核心' 重命名为 '腹部/核心'
+  const allExercises = STORAGE.get(STORAGE.keys.exercises) || [];
+  let exChanged = false;
+  allExercises.forEach(e => {
+    if (e.category === '核心') { e.category = '腹部/核心'; exChanged = true; }
+  });
+  if (exChanged) STORAGE.set(STORAGE.keys.exercises, allExercises);
 
   // 构造动作: SE = [name, category, rest, note, fieldIdx], F[fieldIdx] = fields
   const exMap = {};
