@@ -180,10 +180,11 @@ Stats._toggleDetail = function(id) {
   detail.classList.remove('hidden');
 };
 
-// ---------- 编辑记录（每个字段独立输入 + 补组） ----------
+// ---------- 编辑记录（↑↓箭头排序 + 可删动作 + 可补删组） ----------
 Stats.editRecord = function(id) {
   const r = Records.getById(id);
   if (!r) return;
+  const total = (r.exercisesCompleted || []).length;
   let html = `<h2>编辑训练记录</h2>
     <form id="edit-record-form">
       <div class="form-group">
@@ -198,32 +199,33 @@ Stats.editRecord = function(id) {
   (r.exercisesCompleted || []).forEach((ec, exIdx) => {
     const fields = this._getFieldsFor(ec);
     const keys = fields.length ? fields : Object.keys(ec.sets?.[0] || {}).map(k => ({key:k,label:k,unit:''}));
-    html += `<div class="form-section exercise-block" data-orig-idx="${exIdx}">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:0.75rem;color:var(--text-secondary)">#</span>
-          <input type="number" class="form-input" style="width:48px" name="order-${exIdx}" value="${exIdx+1}" min="1" max="${r.exercisesCompleted.length}">
-          <span class="form-section-title">${Esc.html(ec.name)}</span>
+    html += `<div class="form-section exercise-block" data-idx="${exIdx}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:4px">
+          ${exIdx > 0 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var b=this.closest('.exercise-block');var p=b.previousElementSibling;if(p&&p.classList.contains('exercise-block')){p.parentElement.insertBefore(b,p)}" style="font-size:0.9rem">↑</button>` : '<span style="width:28px"></span>'}
+          ${exIdx < total - 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="var b=this.closest('.exercise-block');var n=b.nextElementSibling;if(n&&n.classList.contains('exercise-block')){n.parentElement.insertBefore(n,b)}" style="font-size:0.9rem">↓</button>` : '<span style="width:28px"></span>'}
+          <span style="font-weight:600;font-size:0.9rem">${Esc.html(ec.name)}</span>
         </div>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.exercise-block').remove()" style="color:var(--danger);font-size:0.75rem">🗑️ 删除动作</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.exercise-block').remove()" style="color:var(--danger);font-size:0.75rem">🗑️ 删除</button>
       </div>`;
-    html += `<div class="existing-sets">`;
+    html += `<div class="existing-sets" data-ex="${exIdx}">`;
     (ec.sets || []).forEach((s, setIdx) => {
       html += `<div class="set-row" style="display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap">`;
       html += `<span style="font-size:0.75rem;color:var(--text-secondary);min-width:28px">${setIdx+1}</span>`;
       keys.forEach(f => {
         const val = s[f.key] ?? '';
-        html += `<input type="text" class="form-input" style="width:64px;flex:1;min-width:48px" name="s-${exIdx}-${setIdx}-${f.key}" value="${Esc.html(String(val))}"><span style="font-size:0.65rem;color:var(--text-secondary);margin-right:2px">${Esc.html(f.unit)}</span>`;
+        html += `<input type="text" class="form-input set-input" style="width:64px;flex:1;min-width:48px" data-ex="${exIdx}" data-set="${setIdx}" data-key="${f.key}" value="${Esc.html(String(val))}"><span style="font-size:0.65rem;color:var(--text-secondary);margin-right:2px">${Esc.html(f.unit)}</span>`;
       });
       html += `<button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.set-row').remove()" style="color:var(--danger);font-size:0.7rem;padding:2px 6px">✕</button>`;
       html += `</div>`;
     });
     html += `</div>`;
-    // 补组按钮
     html += `<button type="button" class="btn btn-secondary btn-sm" onclick="
       var container=this.previousElementSibling;
       var tpl=container.querySelector('.set-row');
-      if(tpl){var c=tpl.cloneNode(true);c.querySelectorAll('input').forEach(function(i){i.value='';i.name=i.name.replace(/s-\\d+-\\d+/,'s-'+${exIdx}+'-'+(container.children.length))});container.appendChild(c)}
+      if(tpl){var c=tpl.cloneNode(true);c.querySelectorAll('input.set-input').forEach(function(i){
+        i.value=''; var ex=i.dataset.ex; var si=container.children.length; i.name=''; i.dataset.set=si;
+      });container.appendChild(c)}
     " style="margin-top:4px">+ 补一组</button>`;
     html += `</div>`;
   });
@@ -246,31 +248,24 @@ Stats._saveEdit = function(id) {
     note: fd.get('note') || ''
   };
 
-  // 按 order 排序重构 exercisesCompleted
+  // 按 DOM 视觉顺序重构 exercisesCompleted
   const blocks = form.querySelectorAll('.exercise-block');
-  const collected = [];
+  const newCompleted = [];
   blocks.forEach(block => {
-    const origIdx = parseInt(block.dataset.origIdx);
-    const ec = r.exercisesCompleted[origIdx];
+    const idx = parseInt(block.dataset.idx);
+    const ec = r.exercisesCompleted[idx];
     if (!ec) return;
-    const order = parseInt(block.querySelector('[name^="order-"]')?.value) || 1;
-    const fields = this._getFieldsFor(ec);
-    const keys = fields.length ? fields.map(f => f.key) : Object.keys(ec.sets?.[0] || {});
     const sets = [];
     const setRows = block.querySelectorAll('.set-row');
     setRows.forEach(row => {
       const set = {};
-      keys.forEach(k => {
-        const inp = row.querySelector(`[name$="-${k}"]`);
-        if (inp) set[k] = inp.value;
+      row.querySelectorAll('.set-input').forEach(inp => {
+        set[inp.dataset.key] = inp.value;
       });
       if (Object.keys(set).length) sets.push(set);
     });
-    if (sets.length) collected.push({ order, data: { ...ec, sets } });
+    if (sets.length) newCompleted.push({ ...ec, sets });
   });
-  // 按 order 排序
-  collected.sort((a, b) => a.order - b.order);
-  const newCompleted = collected.map(c => c.data);
   if (newCompleted.length) updates.exercisesCompleted = newCompleted;
 
   Records.update(id, updates);
