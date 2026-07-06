@@ -108,14 +108,12 @@ Records.getStats = function(records) {
 
   let totalSets = 0;
   let totalVolume = 0;
-  const rpes = [];
   const weights = [];
   const weightTrend = [];
   const byDate = {};
 
   list.forEach(r => {
     if (r.weight) weights.push(r.weight);
-    if (r.rpe) rpes.push(r.rpe);
 
     const dateKey = r.date.slice(0, 10);
     if (!byDate[dateKey]) byDate[dateKey] = { sessions: 0, sets: 0, volume: 0, duration: 0 };
@@ -144,7 +142,7 @@ Records.getStats = function(records) {
     totalDuration: list.reduce((s, r) => s + (r.totalDuration || 0), 0),
     totalSets,
     totalVolume,
-    avgRpe: rpes.length ? (rpes.reduce((s, v) => s + v, 0) / rpes.length) : 0,
+    totalExercises: list.reduce((s, r) => s + (r.exercisesCompleted || []).length, 0),
     avgWeight: weights.length ? (weights.reduce((s, v) => s + v, 0) / weights.length) : 0,
     weightTrend,
     byDate
@@ -154,11 +152,11 @@ Records.getStats = function(records) {
 // ---------- 导出 CSV ----------
 Records.exportCSV = function(records) {
   const list = records || this.getAll();
-  let csv = '日期,计划,用时(秒),体重(kg),RPE,备注\n';
+  let csv = '日期,计划,用时(秒),体重(kg),备注\n';
   list.forEach(r => {
     const date = r.date.slice(0, 19).replace('T', ' ');
     const note = (r.note || '').replace(/,/g, '，');
-    csv += `${date},${r.planName},${r.totalDuration || 0},${r.weight || 0},${r.rpe || 0},${note}\n`;
+    csv += `${date},${r.planName},${r.totalDuration || 0},${r.weight || 0},${note}\n`;
 
     // 各组详情
     (r.exercisesCompleted || []).forEach(ec => {
@@ -184,8 +182,8 @@ Records.renderStats = function(container, opts = {}) {
     { label: '总组数', value: stats.totalSets },
     { label: '总时长', value: UI.formatDuration(stats.totalDuration) },
     { label: '总容量', value: (stats.totalVolume / 1000).toFixed(1) + 'k' },
-    { label: '平均 RPE', value: stats.avgRpe.toFixed(1) },
-    { label: '平均体重', value: stats.avgWeight.toFixed(1) + 'kg' }
+    { label: '平均体重', value: stats.avgWeight.toFixed(1) + 'kg' },
+    { label: '总动作', value: stats.totalExercises || 0 }
   ];
 
   cards.forEach(c => {
@@ -200,14 +198,14 @@ Records.renderStats = function(container, opts = {}) {
   } else {
     html += '<div style="font-weight:600;margin:16px 0 8px">训练记录</div>';
     records.slice(0, 50).forEach(r => {
-      const exNames = (r.exercisesCompleted || []).map(ec => ec.name).join(', ');
+      const exNames = (r.exercisesCompleted || []).map((ec, i) => `#${i+1} ${Esc.html(ec.name)}`).join(' · ');
       html += `<div class="card" style="font-size:0.85rem;cursor:pointer" onclick="Records._toggleDetail('${r.id}')">
         <div style="display:flex;justify-content:space-between">
           <span>${UI.formatDate(r.date)}</span>
           <span style="color:var(--text-secondary)">${Esc.html(r.planName)}</span>
         </div>
-        <div style="margin-top:4px;color:var(--text-secondary)">体重 ${r.weight}kg · RPE ${r.rpe}</div>
-        <div style="margin-top:2px;color:var(--text-secondary)">${Esc.html(exNames)}</div>
+        <div style="margin-top:4px;color:var(--text-secondary)">体重 ${r.weight}kg · ${UI.formatDuration(r.totalDuration || 0)}</div>
+        <div style="margin-top:2px;color:var(--text-secondary)">${exNames}</div>
         <div id="record-detail-${r.id}" class="hidden" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
       </div>`;
     });
@@ -219,19 +217,29 @@ Records.renderStats = function(container, opts = {}) {
 Records._toggleDetail = function(id) {
   const detail = document.getElementById('record-detail-' + id);
   if (!detail) return;
-  if (!detail.classList.contains('hidden')) {
-    detail.classList.add('hidden');
-    return;
-  }
+  if (!detail.classList.contains('hidden')) { detail.classList.add('hidden'); return; }
   const r = this.getById(id);
   if (!r) return;
 
   let html = '';
-  (r.exercisesCompleted || []).forEach(ec => {
-    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong></div>`;
+  (r.exercisesCompleted || []).forEach((ec, exIdx) => {
+    // 查找字段定义
+    let fields = [];
+    if (ec.exerciseId) { const ex = Exercises.getById(ec.exerciseId); if (ex) fields = ex.fields; }
+    if (!fields.length) { const ex = Exercises.getAll().find(e => e.name === ec.name); if (ex) fields = ex.fields; }
+    html += `<div style="margin-bottom:8px"><strong>${Esc.html(ec.name)}</strong> <span style="font-weight:400;color:var(--text-secondary);font-size:0.75rem">#${exIdx+1}</span>`;
+    if (ec.targetReps) {
+      const totalReps = (ec.sets || []).reduce((s, set) => s + (parseInt(set.reps) || 0), 0);
+      const done = totalReps >= ec.targetReps ? '✅' : '⏳';
+      html += ` <span style="font-size:0.75rem;color:var(--text-secondary)">${done} ${totalReps}/${ec.targetReps}</span>`;
+    }
+    html += `</div>`;
     (ec.sets || []).forEach((s, i) => {
-      const vals = Object.values(s).filter(v => v != null && v !== '').join(' · ');
-      html += `<div style="padding:2px 0">组 ${i+1}: ${Esc.html(String(vals))}</div>`;
+      const vals = fields.length
+        ? fields.map(f => { const v = s[f.key]; return v != null && v !== '' ? `${v}${f.unit || ''}` : null; }).filter(Boolean).join(' · ')
+        : Object.values(s).filter(v => v != null && v !== '').join(' · ');
+      const dropBadge = s._dropGroup ? ' <span style="color:#e68a2e;font-size:0.7rem">🔽递减</span>' : '';
+      html += `<div style="padding:2px 0">组 ${i+1}: ${Esc.html(String(vals))}${dropBadge}</div>`;
     });
   });
   if (r.note) html += `<div style="margin-top:4px;color:var(--text-secondary)">💬 ${Esc.html(r.note)}</div>`;

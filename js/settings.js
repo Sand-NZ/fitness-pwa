@@ -51,13 +51,6 @@ Settings.renderPage = function() {
     </div>
     <div class="setting-item">
       <div>
-        <div class="setting-label">导出训练计划</div>
-        <div class="setting-desc">所有计划为 JSON</div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="Backup.exportPlans()">导出</button>
-    </div>
-    <div class="setting-item">
-      <div>
         <div class="setting-label">导出训练记录</div>
         <div class="setting-desc">所有记录为 JSON</div>
       </div>
@@ -124,7 +117,7 @@ Settings.renderPage = function() {
   // ====== 关于 ======
   html += `<div class="card" style="text-align:center;font-size:0.8rem;color:var(--text-secondary)">
     <div style="font-size:1.5rem;margin-bottom:4px">🏋️</div>
-    <div>健身实况记录 v1.0.0</div>
+    <div>健身实况记录 <span id="app-version">v0.40</span></div>
     <div>Fitness Logger PWA</div>
     <div style="margin-top:4px">纯前端 · 无后端 · 全部数据存储在本地</div>
   </div>`;

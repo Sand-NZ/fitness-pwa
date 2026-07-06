@@ -12,3 +12,9 @@ Thumbs.db
 uninstall.exe
 .env
 reasonix-desktop.exe
+
+# 根目录重复文件（实际在 js/ 下）
+/app.js
+/exercises.js
+/settings.js
+/stats.js

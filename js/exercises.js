@@ -50,15 +50,6 @@ Exercises.update = function(id, updates) {
 Exercises.remove = function(id) {
   this.getAll();
   this.data = this.data.filter(e => e.id !== id);
-  // 清理计划中对已删除动作的引用
-  if (window.Plans) {
-    const plans = Plans.getAll();
-    plans.forEach(p => {
-      const before = p.exercises.length;
-      p.exercises = p.exercises.filter(pe => pe.exerciseId !== id);
-      if (p.exercises.length !== before) Plans.update(p.id, { exercises: p.exercises });
-    });
-  }
   this.save();
   return true;
 };
@@ -238,7 +229,7 @@ Exercises.renderPage = function() {
   });
 
   // 按分类顺序排列
-  const catOrder = ['热身', '推', '拉', '腿', '核心'];
+  const catOrder = ['胸','肩','背','腿','腹部/核心','手臂','热身'];
   const sortedCats = Object.keys(categories).sort((a, b) => {
     const ia = catOrder.indexOf(a); const ib = catOrder.indexOf(b);
     if (ia >= 0 && ib >= 0) return ia - ib;
@@ -257,7 +248,7 @@ Exercises.renderPage = function() {
           <span style="font-weight:600;font-size:0.95rem">${Esc.html(cat)} <span style="font-weight:400;color:var(--text-secondary)">(${exercises.length})</span></span>
           <span style="color:var(--text-secondary)">▾</span>
         </div>
-        <div style="margin-top:8px">`;
+        <div class="hidden" style="margin-top:8px">`;
       exercises.forEach(ex => {
         const lastUsed = this.getLastUsed(ex.id, ex.name);
         const lastUsedText = lastUsed ? `<span style="font-size:0.7rem;color:var(--text-secondary)">上次: ${UI.formatShortDate(lastUsed)}</span>` : '';
@@ -322,8 +313,9 @@ Exercises._showForm = function(existing) {
             <option value="推">
             <option value="拉">
             <option value="腿">
-            <option value="核心">
-            <option value="腹部">
+            <option value="肩">
+            <option value="腹部/核心">
+            <option value="手臂">
             <option value="有氧">
             <option value="全身">
           </datalist>

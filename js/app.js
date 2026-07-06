@@ -3,7 +3,7 @@
  */
 const App = {
   currentPage: 'training',
-  pages: ['training', 'plans', 'exercises', 'stats', 'settings'],
+  pages: ['training', 'exercises', 'stats', 'settings'],
   listeners: {},
   _initialized: false
 };
@@ -84,13 +84,15 @@ App.closeModal = function() {
 };
 
 // ============== 预置种子数据 ==============
-// 字段模板索引: 0=仅次数, 1=重量+次数, 2=仅时长, 3=时长+次数, 4=重量+次数(必填)
+// 字段模板索引: 0=仅次数, 1=重量+次数, 2=仅时长, 3=时长+次数, 4=重量+次数(必填), 5=组数, 6=组数+重量
 const F = [
   [['reps','次数','number',{unit:'次',step:1}]],
   [['weight','重量 (kg)','number',{unit:'kg',step:.5}],['reps','次数','number',{unit:'次',step:1}]],
   [['dur','时长 (秒)','number',{unit:'秒',step:5}]],
   [['dur','时长 (秒)','number',{unit:'秒',step:5}],['reps','次数','number',{unit:'次',step:1}]],
-  [['weight','重量 (kg)','number',{unit:'kg',step:.5,required:true}],['reps','次数','number',{unit:'次',step:1,required:true}]]
+  [['weight','重量 (kg)','number',{unit:'kg',step:.5,required:true}],['reps','次数','number',{unit:'次',step:1,required:true}]],
+  [['grps','组数','number',{unit:'组',step:1,required:true}]],
+  [['grps','组数','number',{unit:'组',step:1,required:true}],['weight','重量','number',{unit:'kg',step:.5}]]
 ];
 // [name, category, rest, note, fieldIdx]
 const SE = [
@@ -98,33 +100,65 @@ const SE = [
   ['蜘蛛趴','热身',30,'髋关节灵活性',0],['弹力带训练','热身',30,'大臂外展+推肩',0],
   ['呼吸训练','热身',15,'腹式/剑突/单腿/折刀/后纵隔/侧纵隔',3],
   ['伟大者拉伸','热身',15,'胸椎+髋屈肌',0],['俯身臂屈伸','热身',30,'',1],
-  ['杠铃卧推','推',120,'主项',4],['哑铃卧推','推',90,'主项',4],
-  ['双杠臂屈伸（助力）','推',90,'辅助',4],['上斜哑铃卧推','推',90,'辅助',4],
-  ['反向飞鸟','推',60,'体态（铁律首位）',4],['蝴蝶机夹胸','推',60,'可选',4],
-  ['器械直臂下压','推',60,'可选',4],['俯身哑铃后束飞鸟','推',60,'可选',4],
-  ['助力引体向上','拉',120,'主项',4],['高位下拉','拉',90,'辅助',4],
-  ['T杆划船','拉',90,'辅助',4],['钢索划船','拉',90,'辅助',4],
-  ['单臂哑铃划船','拉',90,'辅助',4],['面拉','拉',60,'体态（铁律首位）',4],
-  ['哑铃推肩','拉',90,'记录在拉日',4],['静态悬挂','拉',30,'握力训练',2],
+  ['杠铃卧推','胸',120,'主项',4],['哑铃卧推','胸',90,'主项',4],
+  ['助力双杠臂屈伸','胸',90,'',4],['上斜器械卧推','胸',90,'',4],
+  ['蝴蝶机夹胸','胸',60,'可选',4],['器械直臂下压','胸',60,'可选',4],
+  ['蝴蝶机反向飞鸟','肩',90,'',4],['俯身哑铃后束飞鸟','肩',60,'可选',4],
+  ['哑铃推肩','肩',90,'',4],
+  ['助力引体向上','背',120,'主项',4],['高位下拉','背',90,'辅助',4],
+  ['T杆划船','背',90,'辅助',4],['钢索划船','背',90,'辅助',4],
+  ['单臂哑铃划船','背',90,'辅助',4],['静态悬挂','背',30,'握力训练',2],
   ['保加利亚蹲','腿',120,'主项',4],['罗马尼亚硬拉','腿',120,'辅助',4],
   ['后腿弓步蹲','腿',90,'辅助',4],['山羊挺身','腿',60,'辅助',1],
-  ['哥本哈根支撑','腿',60,'辅助',2],
-  ['平板支撑','核心',45,'',2],['锯式俯卧撑','核心',60,'',0],
-  ['卷腹','核心',45,'',1],['仰卧抬腿','核心',45,'',0]
-];
-
-const SEED_PLANS = [
-  { name:'推日', ex:['杠铃卧推','哑铃卧推','双杠臂屈伸（助力）','上斜哑铃卧推','反向飞鸟','蝴蝶机夹胸','器械直臂下压','俯身哑铃后束飞鸟'] },
-  { name:'拉日', ex:['助力引体向上','高位下拉','T杆划船','钢索划船','单臂哑铃划船','面拉','哑铃推肩','静态悬挂'] },
-  { name:'腿日', ex:['保加利亚蹲','罗马尼亚硬拉','后腿弓步蹲','山羊挺身','哥本哈根支撑'] }
+  ['哥本哈根支撑','腿',60,'辅助',2],['单腿硬拉','腿',90,'',4],
+  ['瑜伽垫核心训练','腹部/核心',90,'',5],['反向山羊挺身','腹部/核心',90,'',6],
+  ['悬垂举腿','腹部/核心',90,'',0],['平板支撑','腹部/核心',45,'',2],
+  ['锯式俯卧撑','腹部/核心',60,'',0],['卷腹','腹部/核心',45,'',1],
+  ['仰卧抬腿','腹部/核心',45,'',0]
 ];
 
 function seedDefaultData() {
-  const SEED_VER = 3;
+  const SEED_VER = 8;
   const seeded = parseInt(localStorage.getItem('fitness_seed_version') || '0', 10);
   if (seeded >= SEED_VER) return;
 
   localStorage.removeItem('fitness_pending_training');
+
+  // v4: 清理旧记录中的 rpe 字段
+  const allRecords = STORAGE.get(STORAGE.keys.records) || [];
+  let recordsChanged = false;
+  allRecords.forEach(r => {
+    if (r.rpe !== undefined || r.avgRpe !== undefined) {
+      delete r.rpe; delete r.avgRpe;
+      recordsChanged = true;
+    }
+  });
+  if (recordsChanged) STORAGE.set(STORAGE.keys.records, allRecords);
+
+  // v5: 将分类 '核心' 重命名为 '腹部/核心'
+  const allExercises = STORAGE.get(STORAGE.keys.exercises) || [];
+  let exChanged = false;
+  allExercises.forEach(e => {
+    if (e.category === '核心') { e.category = '腹部/核心'; exChanged = true; }
+  });
+  if (exChanged) STORAGE.set(STORAGE.keys.exercises, allExercises);
+
+  // v7: 彻底清除推/拉分类 + 腹部→腹部/核心
+  const allExercisesV7 = STORAGE.get(STORAGE.keys.exercises) || [];
+  let exChangedV7 = false;
+  const exCatMapV7 = {
+    '杠铃卧推':'胸','哑铃卧推':'胸','双杠臂屈伸（助力）':'胸','上斜哑铃卧推':'胸','蝴蝶机夹胸':'胸','器械直臂下压':'胸',
+    '反向飞鸟':'肩','俯身哑铃后束飞鸟':'肩','面拉':'肩','哑铃推肩':'肩',
+    '助力引体向上':'背','高位下拉':'背','T杆划船':'背','钢索划船':'背','单臂哑铃划船':'背','静态悬挂':'背'
+  };
+  allExercisesV7.forEach(e => {
+    if (e.category === '推' || e.category === '拉' || exCatMapV7[e.name]) {
+      const newCat = exCatMapV7[e.name];
+      if (newCat && e.category !== newCat) { e.category = newCat; exChangedV7 = true; }
+    }
+    if (e.category === '腹部' || e.category === '腹部 ') { e.category = '腹部/核心'; exChangedV7 = true; }
+  });
+  if (exChangedV7) STORAGE.set(STORAGE.keys.exercises, allExercisesV7);
 
   // 构造动作: SE = [name, category, rest, note, fieldIdx], F[fieldIdx] = fields
   const exMap = {};
@@ -148,20 +182,13 @@ function seedDefaultData() {
   const merged = [...userExercises, ...newExercises];
   STORAGE.set(STORAGE.keys.exercises, merged);
 
-  // 计划：重映射旧引用 + 添加新计划
+  // 计划：重映射旧引用（保留已有计划）
   const existingPlans = STORAGE.get(STORAGE.keys.plans) || [];
   let plansChanged = false;
   existingPlans.forEach(p => {
     (p.exercises || []).forEach(pe => {
       if (oldToNewId[pe.exerciseId]) { pe.exerciseId = oldToNewId[pe.exerciseId]; plansChanged = true; }
     });
-  });
-  const planNames = new Set(existingPlans.map(p => p.name));
-  SEED_PLANS.forEach(p => {
-    if (!planNames.has(p.name)) {
-      existingPlans.push(newPlan(p.name, p.ex.map(n => ({ exerciseId: exMap[n] || generateId(), overrideFields:[] }))));
-      plansChanged = true;
-    }
   });
   if (plansChanged) STORAGE.set(STORAGE.keys.plans, existingPlans);
 
@@ -236,7 +263,6 @@ App.init = function() {
   this.on('pageChange', (page) => {
     switch (page) {
       case 'exercises': if (window.Exercises) Exercises.renderPage(); break;
-      case 'plans':     if (window.Plans) Plans.renderPage(); break;
       case 'stats':     if (window.Stats) Stats.renderPage(); break;
       case 'settings':  if (window.Settings) Settings.renderPage(); break;
       case 'training':  if (window.Training) Training.renderPage(); break;
