@@ -18,7 +18,11 @@ STORAGE.set = function(key, data) {
     this.checkCapacity();
     return true;
   } catch (e) {
-    if (e.name === 'QuotaExceededError') alert('⚠️ 本地存储空间不足，请导出备份后清理数据。');
+    if (e.name === 'QuotaExceededError') {
+      const msg = '⚠️ 本地存储空间不足，请导出备份后清理数据。';
+      if (typeof window !== 'undefined' && window.App) App.showToast(msg, 'error', 6000);
+      else alert(msg);
+    }
     return false;
   }
 };

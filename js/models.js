@@ -14,10 +14,7 @@ function defaultSettings() {
     activePlanId: null,
     lastActiveTab: 'training',
     lastMode: 'free',
-    autoDefaultWeight: null,
-    webdavUrl: null,
-    webdavUsername: null,
-    webdavPassword: null
+    autoDefaultWeight: null
   };
 }
 
